@@ -1,2 +1,1 @@
-# lpsolver
-Linear programming tasks solver (based on the Nesterov-Todd method)
+# Решение задачи линейного программирования методом Нестерова-Тодда
