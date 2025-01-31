@@ -4,6 +4,7 @@
 #include <eigen3/Eigen/SuperLUSupport>
 #include <functional>
 #include <vector>
+#include <iostream>
 
 namespace ODGD {
     double minimize(double start, double left, double right, std::function<double(double)> df, double learningRate=0.1, size_t maxIter=1000, double eps=1e-6) {
@@ -67,7 +68,7 @@ namespace LPSolver {
             for (size_t i = 0; i < n; ++i) {
                 data.emplace_back(i, i, x[i] / s[i]);
             }
-            Matrix invH;
+            Matrix invH(n, n);
             invH.setFromTriplets(data.begin(), data.end());
             return invH;
         }
@@ -228,5 +229,38 @@ namespace LPSolver {
 };
 
 int main() {
-    
+    std::vector<Eigen::Triplet<double>> data;
+    size_t n, m; std::cin >> n >> m;
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < m; ++j) {
+            double val; std::cin >> val;
+            if (std::abs(val) > 1e-6) data.emplace_back(i, j, val);
+        }
+    }
+    LPSolver::Matrix A(n, m);
+    A.setFromTriplets(data.begin(), data.end());
+    LPSolver::Vector b(m), c(n), x(n), y(m), s(n);
+    for (size_t i = 0; i < m; ++i) {
+        double val; std::cin >> val;
+        b(i) = val;
+    }
+    for (size_t i = 0; i < n; ++i) {
+        double val; std::cin >> val;
+        c(i) = val;
+    }
+    for (size_t i = 0; i < n; ++i) {
+        double val; std::cin >> val;
+        x(i) = val;
+    }
+    for (size_t i = 0; i < m; ++i) {
+        double val; std::cin >> val;
+        y(i) = val;
+    }
+    for (size_t i = 0; i < n; ++i) {
+        double val; std::cin >> val;
+        s(i) = val;
+    }
+    LPSolver::Problem prob(n, m, A, b, c);
+    LPSolver::Position position(n, m, x, y, s);
+    auto res = LPSolver::solve(prob, position, 1e-2);
 }
