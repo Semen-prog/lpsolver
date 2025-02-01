@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(lpsolver)
 
+add_compile_options(-Wall -Wextra -Wshadow -DINFO)
+
 # Find Eigen3 (header-only library)
 find_package(Eigen3 REQUIRED)
 
@@ -8,6 +10,8 @@ find_package(Eigen3 REQUIRED)
 find_package(superlu REQUIRED)
 
 include_directories(/usr/include/superlu)
+include_directories(/usr/include/eigen3)
+include_directories(LBFGSpp)
 
 # Add your executable
 add_executable(lpsolver main.cpp)
