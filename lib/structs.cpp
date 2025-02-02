@@ -1,4 +1,4 @@
-#include <lpsolver/solver.hpp>
+#include <lpsolver/structs.hpp>
 
 namespace LPSolver {
     Problem::Problem(size_t n_, size_t m_, const Matrix &A_, const Vector &b_, const Vector &c_)
