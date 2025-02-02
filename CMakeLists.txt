@@ -1,27 +1,34 @@
 cmake_minimum_required(VERSION 3.10)
 project(lpsolver)
 
-add_compile_options(-Wall -Wextra -Wshadow -DINFO)
+add_compile_options(-Wall -Wextra -Wshadow)
 
-# Find Eigen3 (header-only library)
-find_package(Eigen3 REQUIRED)
+option(DEBINFO "Debug info mode" OFF)
 
-# Find SuperLU (external library)
+if(DEBINFO)
+    add_compile_options(-DINFO)
+endif()
+
 find_package(superlu REQUIRED)
 
 include_directories(/usr/include/superlu)
 include_directories(/usr/include/eigen3)
-include_directories(LBFGSpp)
+include_directories(include)
+include_directories(include/LBFGSpp)
 
-# Add your executable
-add_executable(lpsolver main.cpp)
+add_library(libsolve STATIC
+    lib/structs.cpp
+    lib/central.cpp
+    lib/predict.cpp
+    lib/solve.cpp
+)
 
-# Link Eigen and SuperLU
-target_link_libraries(lpsolver
-    Eigen3::Eigen       # Eigen headers
+target_link_libraries(libsolve
     superlu::superlu    # SuperLU library
 )
 
-# Set C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(lpsolver bin/lpsolver.cpp)
+
+target_link_libraries(lpsolver
+    libsolve
+)
