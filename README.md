@@ -20,7 +20,7 @@
 [...] $ mkdir build
 [...] $ cd build
 [.../build] $ cmake /path/to/repo/lpsolver -DDEBINFO=ON/OFF
-[.../make] $ make
+[.../build] $ make
 ```
 
 Параметр `DEBINFO` может быть `ON` или `OFF` в зависимости от того, необходимо ли показывать отладочную информацию.
