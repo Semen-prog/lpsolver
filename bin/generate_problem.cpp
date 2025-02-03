@@ -21,6 +21,9 @@ int main(int argc, char *argv[]) {
     long k = problem.first.A.nonZeros();
     std::cout << n << ' ' << m << ' ' << k << '\n';
 
+    std::cout.precision(20);
+    std::cout << std::fixed;
+
     for (int col = 0; col < problem.first.A.outerSize(); ++col) {
         for (int index = problem.first.A.outerIndexPtr()[col]; index < problem.first.A.outerIndexPtr()[col + 1]; ++index) {
             int row = problem.first.A.innerIndexPtr()[index];
@@ -28,9 +31,6 @@ int main(int argc, char *argv[]) {
             std::cout << row << ' ' << col << ' ' << val << '\n';
         }
     }
-
-    std::cout.precision(20);
-    std::cout << std::fixed;
 
     for (int i = 0; i < m; ++i) {
         std::cout << problem.first.b(i) << " \n"[i == m - 1];
