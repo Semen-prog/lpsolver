@@ -29,6 +29,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    std::cout.precision(20);
+    std::cout << std::fixed;
+
     for (int i = 0; i < m; ++i) {
         std::cout << problem.first.b(i) << " \n"[i == m - 1];
     }
