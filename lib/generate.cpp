@@ -3,17 +3,6 @@
 #include <numeric>
 #include <random>
 
-#ifdef INFO
-#include <iostream>
-#include <format>
-#endif
-
-#ifdef INFO
-#define debug_print(...) std::print(std::cerr, __VA_ARGS__)
-#else
-#define debug_print(...)
-#endif
-
 namespace LPSolver {
     std::pair<Problem, Position> generateProblem(int m, int n, long long max_non_zero, int random_seed) {
         debug_print("called generateProblem with m == {0}, n == {1}, max_non_zero == {2}, random_seed == {3}\n", m, n, max_non_zero, random_seed);
@@ -84,7 +73,7 @@ namespace LPSolver {
         Vector x(n);
 
         debug_print("Filling x...\n");
-        for (int i = 0; i < m; ++i) {
+        for (int i = 0; i < n; ++i) {
             double cur_value = 0;
             while (cur_value < kDoublePrecisionEps) {
                 cur_value = std::abs(rng(rnd));

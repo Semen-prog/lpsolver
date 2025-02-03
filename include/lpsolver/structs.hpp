@@ -4,6 +4,17 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 
+#ifdef INFO
+#include <iostream>
+#include <format>
+#define debug_print(...) std::print(std::cerr, __VA_ARGS__)
+void _printVector(const Eigen::VectorXd&);
+#define debug_print_vector(a) debug_print("Vector {0}: ", #a); _printVector(a)
+#else
+#define debug_print(...)
+#define debug_print_vector(a)
+#endif
+
 namespace LPSolver {
     
     using Matrix = Eigen::SparseMatrix<double>;

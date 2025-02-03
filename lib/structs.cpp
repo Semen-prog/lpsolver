@@ -1,5 +1,14 @@
 #include <lpsolver/structs.hpp>
 
+#ifdef INFO
+void _printVector(const Eigen::VectorXd& vec) {
+    long len = vec.size();
+    for (int i = 0; i < len; ++i) {
+        std::cerr << vec(i) << " \n"[i == len - 1];
+    }
+}
+#endif
+
 namespace LPSolver {
     Problem::Problem(size_t n_, size_t m_, const Matrix &A_, const Vector &b_, const Vector &c_)
         : n(n_)
@@ -26,7 +35,8 @@ namespace LPSolver {
     }
 
     bool Position::isCorrect() const {
-        return std::min(x.minCoeff(), s.minCoeff()) > 1e-6;
+        // return std::min(x.minCoeff(), s.minCoeff()) > -1e-6;
+        return x.minCoeff() >= 0 && s.minCoeff() > 1e-6;
     }
 
     Matrix Position::constructInvH() const {

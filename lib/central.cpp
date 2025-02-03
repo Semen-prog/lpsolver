@@ -1,9 +1,11 @@
+#include "lpsolver/structs.hpp"
 #include <Eigen/SuperLUSupport>
 #include <LBFGSpp/LBFGSB.h>
 #include <lpsolver/solver.hpp>
 
 namespace LPSolver {
     Delta centralDirection(const Problem &prob, const Position &position) {
+        debug_print("Called centralDirection\n");
         Matrix invH = position.constructInvH();
         Matrix AT = prob.A.transpose();
         Vector tmp = -position.x + position.mu() * position.s.cwiseInverse();
@@ -16,6 +18,7 @@ namespace LPSolver {
         Vector ds = -AT * dy;
         Vector dx = -invH * ds + tmp;
 
+        debug_print("Finished centralDirection\n");
         return Delta(position.n, position.m, dx, dy, ds);
     }
 
@@ -37,11 +40,13 @@ namespace LPSolver {
     };
 
     double centralLength(const Position &position, const Delta &delta) {
+        debug_print("Called centralLength\n");
         double upper_bound = 1e-3;
         double mu = position.mu();
         auto ok = [&](double x) {
             return (position + delta * x).isCorrect() && (position + delta * x).mu() <= 1.1 * mu;
         };
+        assert(ok(0));
 
         while (!ok(upper_bound)) {
             upper_bound /= 2;
@@ -69,6 +74,7 @@ namespace LPSolver {
         Vector x = Vector::Constant(1, upper_bound);
         double df;
         solver.minimize(fun, x, df, Vector::Constant(1, 1e-9), Vector::Constant(1, upper_bound));
+        debug_print("Finished centralLength\n");
         return x(0);
     }
 } // namespace LPSolver
