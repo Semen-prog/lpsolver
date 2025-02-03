@@ -30,23 +30,23 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < m; ++i) {
-        std::cout << problem.first.b.coeff(i) << " \n"[i == m - 1];
+        std::cout << problem.first.b(i) << " \n"[i == m - 1];
     }
 
     for (int i = 0; i < n; ++i) {
-        std::cout << problem.first.c.coeff(i) << " \n"[i == n - 1];
+        std::cout << problem.first.c(i) << " \n"[i == n - 1];
     }
 
     for (int i = 0; i < n; ++i) {
-        std::cout << problem.second.x.coeff(i) << " \n"[i == n - 1];
+        std::cout << problem.second.x(i) << " \n"[i == n - 1];
     }
 
     for (int i = 0; i < m; ++i) {
-        std::cout << problem.second.y.coeff(i) << " \n"[i == m - 1];
+        std::cout << problem.second.y(i) << " \n"[i == m - 1];
     }
 
     for (int i = 0; i < n; ++i) {
-        std::cout << problem.second.s.coeff(i) << " \n"[i == n - 1];
+        std::cout << problem.second.s(i) << " \n"[i == n - 1];
     }
 
     return 0;

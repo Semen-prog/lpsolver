@@ -19,36 +19,36 @@ include_directories(/usr/include/eigen3)
 include_directories(include)
 include_directories(include/LBFGSpp)
 
-add_library(libstruct STATIC
+add_library(struct STATIC
     lib/structs.cpp
 )
 
-add_library(libsolve STATIC
+add_library(solve STATIC
     lib/central.cpp
     lib/predict.cpp
     lib/solve.cpp
 )
 
-add_library(libgen STATIC
+add_library(gen STATIC
     lib/generate.cpp
 )
 
-target_link_libraries(libsolve
+target_link_libraries(solve
     superlu::superlu    # SuperLU library
-    libstruct
+    struct
 )
 
-target_link_libraries(libgen
-    libstruct
+target_link_libraries(gen
+    struct
 )
 
 add_executable(lpsolver bin/lpsolver.cpp)
 add_executable(generate_problem bin/generate_problem.cpp)
 
 target_link_libraries(lpsolver
-    libsolve
+    solve
 )
 
 target_link_libraries(generate_problem
-    libgen
+    gen
 )

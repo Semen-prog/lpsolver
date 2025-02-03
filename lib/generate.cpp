@@ -8,11 +8,15 @@
 #include <format>
 #endif
 
+#ifdef INFO
+#define debug_print(...) std::print(std::cerr, __VA_ARGS__)
+#else
+#define debug_print(...)
+#endif
+
 namespace LPSolver {
     std::pair<Problem, Position> generateProblem(int m, int n, long long max_non_zero, int random_seed) {
-#ifdef INFO
-        std::print(std::cerr, "called generateProblem with m == {0}, n == {1}, max_non_zero == {2}, random_seed == {3}\n", m, n, max_non_zero, random_seed);
-#endif
+        debug_print("called generateProblem with m == {0}, n == {1}, max_non_zero == {2}, random_seed == {3}\n", m, n, max_non_zero, random_seed);
         constexpr double kDoublePrecisionEps = 1e-9;
         assert(n > m && "n must be greater than m");
         assert(max_non_zero >= m && "max_non_zero must be >= m");
@@ -45,9 +49,6 @@ namespace LPSolver {
 
         int max_iterations = 3 * m;
         while (max_non_zero >= 0 && max_iterations--) {
-#ifdef INFO
-            std::print(std::cerr, "max_non_zero == {0}\n", max_non_zero);
-#endif
             int row1 = rows_distrib(rnd);
             int row2 = rows_distrib(rnd);
             double coefficient = 0;
@@ -67,43 +68,55 @@ namespace LPSolver {
             matrix_sets[row1] = nw_row_1;
         }
 
+        debug_print("Finished while\n");
+
         Matrix A(m, n);
+        debug_print("Filling A...\n");
+        std::vector<Eigen::Triplet<double>> triplets;
         for (int i = 0; i < m; ++i) {
-            for (auto [index, value] : matrix_sets[i]) {
-                A.coeffRef(i, index) = value;
+            for (auto [index, val] : matrix_sets[i]) {
+                triplets.emplace_back(i, index, val);
             }
         }
+        A.setFromTriplets(triplets.begin(), triplets.end());
+        debug_print("Filled A\n");
 
         Vector x(n);
 
+        debug_print("Filling x...\n");
         for (int i = 0; i < m; ++i) {
             double cur_value = 0;
             while (cur_value < kDoublePrecisionEps) {
                 cur_value = std::abs(rng(rnd));
             }
-            x.coeffRef(i) = cur_value;
+            x(i) = cur_value;
         }
+        debug_print("Filled x\n");
 
         Vector b = A * x;
 
         Matrix AT = A.transpose();
         Vector y(m);
+        debug_print("Filling y...\n");
         for (int i = 0; i < m; ++i) {
             double cur_value = 0;
             while (std::abs(cur_value) < kDoublePrecisionEps) {
                 cur_value = rng(rnd);
             }
-            y.coeffRef(i) = cur_value;
+            y(i) = cur_value;
         }
+        debug_print("Filled y\n");
 
         Vector s(n);
+        debug_print("Filling s...\n");
         for (int i = 0; i < n; ++i) {
             double cur_value = 0;
             while (cur_value < kDoublePrecisionEps) {
                 cur_value = std::abs(rng(rnd));
             }
-            s.coeffRef(i) = cur_value;
+            s(i) = cur_value;
         }
+        debug_print("Filled s\n");
 
         Vector c = s + AT * y;
 
