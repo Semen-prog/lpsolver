@@ -11,10 +11,15 @@ namespace LPSolver {
         Vector tmp = -position.x + position.mu() * position.s.cwiseInverse();
 
         Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
-        slu.compute(prob.A * invH * AT);
+        debug_print("starting multiplication\n");
+        auto matrix = prob.A * invH * AT;
+        debug_print("starting slu operations\n");
+        slu.compute(matrix);
         assert(slu.info() == Eigen::Success);
         
+        debug_print("starting solve\n");
         Vector dy = slu.solve(-prob.A * tmp);
+        debug_print("solved\n");
         Vector ds = -AT * dy;
         Vector dx = -invH * ds + tmp;
 
