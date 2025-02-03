@@ -10,7 +10,7 @@ namespace LPSolver {
         slu.compute(prob.A * invH * AT);
         assert(slu.info() == Eigen::Success);
 
-        Vector dy = slu.solve(-prob.A * -position.x);
+        Vector dy = slu.solve(prob.b);
         Vector ds = -AT * dy;
         Vector dx = -invH * ds - position.x;
 

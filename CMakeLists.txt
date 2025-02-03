@@ -3,6 +3,7 @@ project(lpsolver)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
 add_compile_options(-Wall -Wextra -Wshadow)
 

@@ -31,7 +31,7 @@ namespace LPSolver {
             return -(position_.x + delta_.x * x).array().log().sum() - (position_.s + delta_.s * x).array().log().sum();
         }
         double df(double x) {
-            return -delta_.x.cwiseProduct((position_.x + delta_.x * x).cwiseInverse()).sum() - delta_.s.cwiseProduct((position_.s + delta_.s * x).cwiseInverse()).sum();;
+            return -delta_.x.cwiseProduct((position_.x + delta_.x * x).cwiseInverse()).sum() - delta_.s.cwiseProduct((position_.s + delta_.s * x).cwiseInverse()).sum();
         }
         double operator()(const Vector &x, Vector &grad) {
             grad = Vector::Constant(1, df(x(0)));
