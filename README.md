@@ -5,7 +5,7 @@
 0. Установите зависимости (пример для Arch Linux)
 
 ```
-[...] $ sudo pacman -S blas superlu eigen
+[...] $ sudo pacman -S blas eigen
 ```
 
 1. Клонируйте репозиторий
@@ -19,11 +19,19 @@
 ```
 [...] $ mkdir build
 [...] $ cd build
-[.../build] $ cmake /path/to/repo/lpsolver -DDEBINFO=ON/OFF
+[.../build] $ cmake /path/to/repo/lpsolver -DINFO=ON/OFF -DSAN=ON/OFF -DSUPER=ON/OFF
 [.../build] $ make
 ```
 
-Параметр `INFO` может быть `ON` или `OFF` в зависимости от того, необходимо ли показывать отладочную информацию.
+- `INFO`: необходимо ли показывать отладочную информацию
+- `SAN`: компилировать ли с санитайзерами
+- `SUPER`: использовать ли SuperLU (по умолчанию используется SparseLU)
+
+В случае использования SuperLU надо отдельно поставить его:
+
+```
+[...] $ sudo pacman -S superlu
+```
 
 3. Вы получите исполняемый файл lpsolver. Пользуйтесь!
 

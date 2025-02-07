@@ -3,14 +3,13 @@ project(lpsolver)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_CXX_STANDARD 26)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -mavx -mavx2 -msse2 -msse3 -mssse3 -msse4 -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -mavx -mavx2 -msse2 -msse3 -mssse3 -msse4 -march=native -DNDEBUG")
 
 add_compile_options(-Wall -Wextra -Wshadow)
 
 option(INFO "Debug info mode" OFF)
 option(SUPER "SuperLU mode" OFF)
 option(SAN "Sanitizers" OFF)
-option(NDEBUG "DNDEBUG" OFF)
 
 if(SAN)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,bounds,undefined,leak -g")
@@ -24,10 +23,6 @@ if(SUPER)
     find_package(superlu REQUIRED)
     include_directories(/usr/include/superlu)
     add_compile_options(-DSUPER)
-endif()
-
-if(NDEBUG)
-    add_compile_options(-DNDEBUG)
 endif()
 
 include_directories(/usr/include/eigen3)
