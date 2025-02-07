@@ -5,7 +5,7 @@
 0. Установите зависимости (пример для Arch Linux)
 
 ```
-[...] $ sudo pacman -S blas eigen
+[...] $ sudo pacman -S eigen
 ```
 
 1. Клонируйте репозиторий
