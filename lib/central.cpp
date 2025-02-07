@@ -1,5 +1,7 @@
 #include "lpsolver/structs.hpp"
+#ifdef SUPER
 #include <Eigen/SuperLUSupport>
+#endif
 #include <LBFGSpp/LBFGSB.h>
 #include <lpsolver/solver.hpp>
 
@@ -9,8 +11,11 @@ namespace LPSolver {
         Matrix invH = position.constructInvH();
         Matrix AT = prob.A.transpose();
         Vector tmp = -position.x + position.mu() * position.s.cwiseInverse();
-
+        #ifdef SUPER
         Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
+        #else
+        Eigen::SparseLU<Eigen::SparseMatrix<double>> slu;
+        #endif
         debug_print("starting multiplication\n");
         auto matrix = prob.A * invH * AT;
         debug_print("starting slu operations\n");
@@ -70,7 +75,7 @@ namespace LPSolver {
         upper_bound = left;
 
         LBFGSpp::LBFGSBParam<double> param;
-        param.epsilon = 1e-6;
+        param.epsilon = 1e-2;
         param.max_iterations = 1000;
 
         LBFGSpp::LBFGSBSolver<double> solver(param);

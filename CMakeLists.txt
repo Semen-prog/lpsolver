@@ -3,19 +3,33 @@ project(lpsolver)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_CXX_STANDARD 26)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -mavx -mavx2 -msse2 -msse3 -mssse3 -msse4 -DNDEBUG -march=native -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -mavx -mavx2 -msse2 -msse3 -mssse3 -msse4 -march=native")
 
 add_compile_options(-Wall -Wextra -Wshadow)
 
 option(INFO "Debug info mode" OFF)
+option(SUPER "SuperLU mode" OFF)
+option(SAN "Sanitizers" OFF)
+option(NDEBUG "DNDEBUG" OFF)
+
+if(SAN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,bounds,undefined,leak -g")
+endif()
 
 if(INFO)
     add_compile_options(-DINFO)
 endif()
 
-find_package(superlu REQUIRED)
+if(SUPER)
+    find_package(superlu REQUIRED)
+    include_directories(/usr/include/superlu)
+    add_compile_options(-DSUPER)
+endif()
 
-include_directories(/usr/include/superlu)
+if(NDEBUG)
+    add_compile_options(-DNDEBUG)
+endif()
+
 include_directories(/usr/include/eigen3)
 include_directories(include)
 include_directories(include/LBFGSpp)
@@ -34,10 +48,16 @@ add_library(gen STATIC
     lib/generate.cpp
 )
 
-target_link_libraries(solve
-    superlu::superlu    # SuperLU library
-    struct
-)
+if(SUPER)
+    target_link_libraries(solve
+        superlu::superlu
+        struct
+    )
+else()
+    target_link_libraries(solve
+        struct
+    )
+endif()
 
 target_link_libraries(gen
     struct

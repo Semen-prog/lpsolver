@@ -1,12 +1,17 @@
+#ifdef SUPER
 #include <Eigen/SuperLUSupport>
+#endif
 #include <lpsolver/solver.hpp>
 
 namespace LPSolver {
     Delta predictDirection(const Problem &prob, const Position &position) {
         Matrix invH = position.constructInvH();
         Matrix AT = prob.A.transpose();
-
+        #ifdef SUPER
         Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
+        #else
+        Eigen::SparseLU<Eigen::SparseMatrix<double>> slu;
+        #endif
         slu.compute(prob.A * invH * AT);
         assert(slu.info() == Eigen::Success);
 
