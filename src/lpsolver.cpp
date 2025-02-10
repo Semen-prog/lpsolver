@@ -36,7 +36,7 @@ int main() {
     LPSolver::Position position(n, m, x, y, s);
     auto res = LPSolver::solve(prob, position, 1e-2);
 
-    std::cout << "x = (";
+    /*std::cout << "x = (";
     for (size_t i = 0; i < n; ++i) {
         std::cout << res.x(i);
         if (i < n - 1) std::cout << ", ";
@@ -50,6 +50,6 @@ int main() {
     for (size_t i = 0; i < n; ++i) {
         std::cout << res.s(i);
         if (i < n - 1) std::cout << ", ";
-    }
+    }*/
     std::cout << ")\n";
 }

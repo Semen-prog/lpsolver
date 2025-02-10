@@ -17,8 +17,8 @@ namespace LPSolver {
             double length = predictLength(position, delta, gamma_predict);
             position += delta * length;
             debug_print("predict step: mu = {0}, gamma = {1}\n", position.mu(), position.gamma());
-            debug_print("INFO 1: {0}\n", position.x.dot(prob.c) - position.y.dot(prob.b));
-            debug_print("INFO 2: {0}\n", position.x.cwiseProduct(position.s).cwiseAbs().maxCoeff());
+            debug_print("dvoystvenny zazor : {0}\n", position.x.dot(prob.c) - position.y.dot(prob.b));
+            debug_print("x*s max coeff     : {0}\n", position.x.cwiseProduct(position.s).cwiseAbs().maxCoeff());
         }
         debug_print("iterations count: {0}\n", cnt_iter);
         return position;

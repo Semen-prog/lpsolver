@@ -9,9 +9,9 @@ namespace LPSolver {
         Matrix AT = prob.A.transpose();
         Vector tmp = -position.x + position.mu() * position.s.cwiseInverse();
         
-	debug_print("starting solve\n");
+	debug_print("starting solve... ");
         Vector dy = lu_solve(prob.A * invH * AT, -prob.A * tmp);
-        debug_print("solved\n");
+        debug_print("done\n");
         Vector ds = -AT * dy;
         Vector dx = -invH * ds + tmp;
 

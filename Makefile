@@ -1,8 +1,8 @@
 CXX = /usr/bin/g++
 NVCC = /opt/cuda/bin/nvcc
 
-CXXFLAGS = -Iinclude/cudss -I/usr/include/eigen3 -Iinclude/LBFGSpp -Iinclude -O2 -Wall -Wextra -Wshadow -DINFO -std=c++26
-NVCCFLAGS = -Iinclude -Iinclude/cudss 
+CXXFLAGS = -Iinclude/cudss -I/usr/include/eigen3 -Iinclude/LBFGSpp -Iinclude -O3 -march=native -Wall -Wextra -Wshadow -DINFO -std=c++26 -msse -msse2 -msse3 -mssse3 -msse4 -mavx -mavx2
+NVCCFLAGS = -Iinclude -Iinclude/cudss -O3 -Xptxas -O3
 
 LIBSTRUCT_SRC = lib/lpsolver/structs.cpp
 LIBSTRUCT_OBJ = $(LIBSTRUCT_SRC:.cpp=.o)
@@ -35,10 +35,10 @@ all: $(SOLVE_FILE) $(GEN_FILE)
 
 $(SOLVE_FILE): $(LIBSOLVE_FILE) $(SOLVE_OBJ)
 	mkdir -p build
-	$(CXX) -o $(SOLVE_FILE) $(SOLVE_OBJ) -L. -L/opt/cuda/targets/x86_64-linux/lib -l:$(LIBSOLVE_FILE) -lcublas -lcudart -l:lib/cudss/libcudss_static.a
+	$(CXX) $(CXXFLAGS) -o $(SOLVE_FILE) $(SOLVE_OBJ) -L. -L/opt/cuda/targets/x86_64-linux/lib -l:$(LIBSOLVE_FILE) -lcublas -lcudart -l:lib/cudss/libcudss_static.a
 $(GEN_FILE): $(LIBGEN_FILE) $(GEN_OBJ)
 	mkdir -p build
-	$(CXX) -o $(GEN_FILE) $(GEN_OBJ) -L. -l:$(LIBGEN_FILE)
+	$(CXX) $(CXXFLAGS) -o $(GEN_FILE) $(GEN_OBJ) -L. -l:$(LIBGEN_FILE)
 
 $(LIBGEN_FILE): $(LIBGEN_OBJ) $(LIBSTRUCT_OBJ)
 	ar rcs $(LIBGEN_FILE) $(LIBGEN_OBJ) $(LIBSTRUCT_OBJ)
@@ -48,4 +48,4 @@ $(LIBSOLVE_FILE): $(LIBSOLVE_OBJ) $(LIBSTRUCT_OBJ)
 .PHONY: clean
 
 clean:
-	rm -rf lib/lpsolver/*.o lib/lpsolver/*.a src/b* build/
+	rm -rf lib/lpsolver/*.o lib/lpsolver/*.a src/*.o build/
