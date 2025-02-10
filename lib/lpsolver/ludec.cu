@@ -23,70 +23,77 @@
 cudaError_t cuda_error = cudaSuccess;
 cudssStatus_t cuda_status = CUDSS_STATUS_SUCCESS;
 
-typedef struct mdata {
-        int* offsets;
-        int* columns;
-        double* vals;
-} mdata;
-
 #include <lpsolver/ludec.hpp>
 
 mdata csc_to_csr(int n, int nnz, const int* rows, const int* cols, const double* vals) {
 	mdata res;
 
-	res.offsets = (int*)calloc(n + 1, sizeof(int));
-	res.columns = (int*)malloc(nnz * sizeof(int));
-	res.vals = (double*)malloc(nnz * sizeof(double));
+    cuda_check(cudaMalloc(&res.offsets, (n + 1) * sizeof(int)));
+    cuda_check(cudaMalloc(&res.columns, nnz * sizeof(int)));
+    cuda_check(cudaMalloc(&res.vals, nnz * sizeof(double)));
+
+	int *res_offsets = (int*)calloc(n + 1, sizeof(int));
+	int *res_columns = (int*)malloc(nnz * sizeof(int));
+	double *res_vals = (double*)malloc(nnz * sizeof(double));
 
 	for (int i = 0; i < nnz; ++i) {
-		res.offsets[rows[i] + 1]++;
+		res_offsets[rows[i] + 1]++;
 	}
 	for (int i = 1; i <= n; ++i) {
-		res.offsets[i] += res.offsets[i - 1];
+		res_offsets[i] += res_offsets[i - 1];
 	}
 
 	int* inds = (int*)malloc(n * sizeof(int));
-	memcpy(inds, res.offsets, n * sizeof(int));
+	memcpy(inds, res_offsets, n * sizeof(int));
 
 	int col = 0;
 	for (int i = 0; i < nnz; ++i) {
 		while (cols[col + 1] <= i) col++;
-		res.columns[inds[rows[i]]] = col;
-		res.vals[inds[rows[i]]] = vals[i];
+		res_columns[inds[rows[i]]] = col;
+		res_vals[inds[rows[i]]] = vals[i];
 		inds[rows[i]]++;
 	}
 
 	free(inds);
+
+    cuda_check(cudaMemcpy(res.offsets, res_offsets, (n + 1) * sizeof(int), cudaMemcpyHostToDevice));
+    cuda_check(cudaMemcpy(res.columns, res_columns, nnz * sizeof(int), cudaMemcpyHostToDevice));
+    cuda_check(cudaMemcpy(res.vals, res_vals, nnz * sizeof(double), cudaMemcpyHostToDevice));
+
+    free(res_offsets);
+    free(res_columns);
+    free(res_vals);
 	return res;
 		
 }
 
-double* ax_equals_b_solver(int n, int nnz, const int* rows, const int* cols, const double* vals, const double* b_h) {
+double* ax_equals_b_solver(int n, int nnz, mdata A_data, const double* b_h) {
 	
-	mdata A_data = csc_to_csr(n, nnz, rows, cols, vals);
+//	mdata A_data = csc_to_csr(n, nnz, rows, cols, vals);
 
 	double* x_h = (double*)malloc(n * sizeof(double));
 
-	int* offsets_d = NULL;
-	int* columns_d = NULL;
-	double* vals_d = NULL;
+	int* offsets_d = A_data.offsets;
+	int* columns_d = A_data.columns;
+	double* vals_d = A_data.vals;
 
 	double* b_d = NULL;
 	double* x_d = NULL;
 
 	// fprintf(stderr, "cudaMalloc\n");
 
-	cuda_check(cudaMalloc(&offsets_d, (n + 1) * sizeof(int)));
-	cuda_check(cudaMalloc(&columns_d, nnz * sizeof(int)));
-	cuda_check(cudaMalloc(&vals_d, nnz * sizeof(double)));
+ /* cuda_check(cudaMalloc(&offsets_d, (n + 1) * sizeof(int)));
+    cuda_check(cudaMalloc(&columns_d, nnz * sizeof(int)));
+    cuda_check(cudaMalloc(&vals_d, nnz * sizeof(double)));
+  */
 	cuda_check(cudaMalloc(&b_d, n * sizeof(double)));
 	cuda_check(cudaMalloc(&x_d, n * sizeof(double)));
 
 	// fprintf(stderr, "cudaMempcy\n");
 
-	cuda_check(cudaMemcpy(offsets_d, A_data.offsets, (n + 1) * sizeof(int), cudaMemcpyHostToDevice));
-	cuda_check(cudaMemcpy(columns_d, A_data.columns, nnz * sizeof(int), cudaMemcpyHostToDevice));
-	cuda_check(cudaMemcpy(vals_d, A_data.vals, nnz * sizeof(double), cudaMemcpyHostToDevice));
+//	cuda_check(cudaMemcpy(offsets_d, A_data.offsets, (n + 1) * sizeof(int), cudaMemcpyHostToDevice));
+//	cuda_check(cudaMemcpy(columns_d, A_data.columns, nnz * sizeof(int), cudaMemcpyHostToDevice));
+//	cuda_check(cudaMemcpy(vals_d, A_data.vals, nnz * sizeof(double), cudaMemcpyHostToDevice));
 	cuda_check(cudaMemcpy(b_d, b_h, n * sizeof(double), cudaMemcpyHostToDevice));
 
 	// fprintf(stderr, "something\n");
@@ -135,13 +142,13 @@ double* ax_equals_b_solver(int n, int nnz, const int* rows, const int* cols, con
 
 	cuda_check(cudaMemcpy(x_h, x_d, n * sizeof(double), cudaMemcpyDeviceToHost));
 	
-	free(A_data.offsets);
+//	free(A_data.offsets);
 	cudaFree(offsets_d);
 
-	free(A_data.columns);
+//	free(A_data.columns);
 	cudaFree(columns_d);
 
-	free(A_data.vals);
+//	free(A_data.vals);
 	cudaFree(vals_d);
 
 	cudaFree(b_d);
