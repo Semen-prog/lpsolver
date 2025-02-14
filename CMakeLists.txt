@@ -3,7 +3,7 @@ project(lpsolver)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_CXX_STANDARD 26)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -mavx -mavx2 -msse2 -msse3 -mssse3 -msse4 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -mavx -mavx2 -msse2 -msse3 -mssse3 -msse4 -march=native")
 
 add_compile_options(-Wall -Wextra -Wshadow)
 
