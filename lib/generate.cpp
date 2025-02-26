@@ -6,13 +6,11 @@
 #include <vector>
 
 namespace LPSolver {
-    std::pair<Problem, Position> generateProblem(int m, int n, long long max_non_zero, int xnz, int snz, int random_seed) {
-        debug_print("called generateProblem with m == {0}, n == {1}, max_non_zero == {2}, xnz == {3}, snz == {4}, random_seed == {5}\n", m, n, max_non_zero, xnz, snz, random_seed);
+    std::pair<Problem, Position> generateProblem(int m, int n, long long max_non_zero, int random_seed) {
+        debug_print("called generateProblem with m == {0}, n == {1}, max_non_zero == {2}, random_seed == {3}\n", m, n, max_non_zero, random_seed);
         constexpr double kDoublePrecisionEps = 1e-9;
         assert(n > m && "n must be greater than m");
         assert(max_non_zero >= m && "max_non_zero must be >= m");
-        assert(xnz <= n && "xnz must be less or equal than n");
-        assert(snz <= n && "snz must be less or equal than n");
 
         std::uniform_real_distribution<double> rng(-5, 5);
         std::mt19937 rnd(random_seed);
@@ -75,21 +73,14 @@ namespace LPSolver {
         debug_print("Filled A\n");
 
         Vector x(n);
-        std::vector<double> x_vec(n, 0);
 
         debug_print("Filling x...\n");
-        for (int i = 0; i < n && xnz > 0; ++i) {
+        for (int i = 0; i < n; ++i) {
             double cur_value = 0;
             while (cur_value < kDoublePrecisionEps) {
                 cur_value = std::abs(rng(rnd));
             }
-            // x(i) = cur_value;
-            x_vec[i] = cur_value;
-            --xnz;
-        }
-        std::shuffle(x_vec.begin(), x_vec.end(), rnd);
-        for (int i = 0; i < n; ++i) {
-            x(i) = x_vec[i];
+            x(i) = cur_value;
         }
         debug_print("Filled x\n");
 
@@ -108,20 +99,13 @@ namespace LPSolver {
         debug_print("Filled y\n");
 
         Vector s(n);
-        std::vector<double> s_vec(n, 0);
         debug_print("Filling s...\n");
-        for (int i = 0; i < n && snz >= 0; ++i) {
+        for (int i = 0; i < n; ++i) {
             double cur_value = 0;
             while (cur_value < kDoublePrecisionEps) {
                 cur_value = std::abs(rng(rnd));
             }
-            // s(i) = cur_value;
-            s_vec[i] = cur_value;
-            --snz;
-        }
-        std::shuffle(s_vec.begin(), s_vec.end(), rnd);
-        for (int i = 0; i < n; ++i) {
-            s(i) = s_vec[i];
+            s(i) = cur_value;
         }
         debug_print("Filled s\n");
 

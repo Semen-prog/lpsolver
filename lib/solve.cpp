@@ -19,6 +19,7 @@ namespace LPSolver {
             debug_print("predict step: mu = {0}, gamma = {1}\n", position.mu(), position.gamma());
             debug_print("INFO 1: {0}\n", position.x.dot(prob.c) - position.y.dot(prob.b));
             debug_print("INFO 2: {0}\n", position.x.cwiseProduct(position.s).cwiseAbs().maxCoeff());
+            debug_print("Ax - b max coeff: {0}\n", (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
         }
         debug_print("iterations count: {0}\n", cnt_iter);
         return position;

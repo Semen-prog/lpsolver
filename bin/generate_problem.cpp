@@ -3,22 +3,20 @@
 #include <iostream>
 
 int main(int argc, char *argv[]) {
-    int n, m, xnz, snz, random_seed;
+    int n, m, random_seed;
     long long max_non_zero;
 
-    if (argc != 7) {
-        std::cerr << "Usage: " << argv[0] << " n m max_non_zero xnz snz random_seed\n";
+    if (argc != 5) {
+        std::cerr << "Usage: " << argv[0] << " n m max_non_zero random_seed\n";
         return 1;
     }
 
     n = atoi(argv[1]);
     m = atoi(argv[2]);
     max_non_zero = atoll(argv[3]);
-    xnz = atoi(argv[4]);
-    snz = atoi(argv[5]);
     random_seed = atoi(argv[6]);
 
-    std::pair<LPSolver::Problem, LPSolver::Position> problem = LPSolver::generateProblem(m, n, max_non_zero, xnz, snz, random_seed);
+    std::pair<LPSolver::Problem, LPSolver::Position> problem = LPSolver::generateProblem(m, n, max_non_zero, random_seed);
 
     long k = problem.first.A.nonZeros();
     std::cout << n << ' ' << m << ' ' << k << '\n';
