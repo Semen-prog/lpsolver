@@ -43,6 +43,10 @@ add_library(gen STATIC
     lib/generate.cpp
 )
 
+add_library(matrices STATIC
+    lib/matrices.cpp
+)
+
 if(SUPER)
     target_link_libraries(solve
         superlu::superlu
@@ -63,6 +67,7 @@ add_executable(generate_problem bin/generate_problem.cpp)
 
 target_link_libraries(lpsolver
     solve
+    matrices
 )
 
 target_link_libraries(generate_problem

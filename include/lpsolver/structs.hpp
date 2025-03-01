@@ -7,6 +7,7 @@
 #ifdef INFO
 #include <iostream>
 #include <format>
+#include <unordered_set>
 #define debug_print(...) std::print(std::cerr, __VA_ARGS__)
 void _printVector(const Eigen::VectorXd&);
 #define debug_print_vector(a) debug_print("Vector {0}: ", #a); _printVector(a)
@@ -29,8 +30,13 @@ namespace LPSolver {
     };
 
     struct Position {
+    private:
+        Vector get_remaining(const Vector&) const;
+    public:
         size_t n, m;
         Vector x, y, s;
+        std::unordered_set<int> index_zero;
+        std::unordered_set<int> index_free;
 
         Position(size_t, size_t, const Vector&, const Vector&, const Vector&);
 
@@ -59,6 +65,18 @@ namespace LPSolver {
         Position& operator-=(const Position &other);
 
         Position operator-(const Position &other) const;
+
+        Vector get_x_remaining() const;
+
+        Vector get_s_remaining() const;
+
+        std::vector<int> get_remaining_indices() const;
+
+        std::vector<int> get_free_indices() const;
+
+        int get_n_remaining() const;
+
+        int cnt_free_indices() const;
     };
 
     using Delta = Position;
