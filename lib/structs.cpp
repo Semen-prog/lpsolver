@@ -158,6 +158,6 @@ namespace LPSolver {
     }
 
     Position Position::remaining() const {
-        std::vector<int> remaining_indices = get_remaining_indices();
+        return Position(get_n_remaining(), m, get_x_remaining(), y, get_s_remaining());
     }
 }; // namespace LPSolver
