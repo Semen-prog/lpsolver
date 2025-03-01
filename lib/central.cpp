@@ -114,29 +114,6 @@ namespace LPSolver {
             }
 
             return Delta(position.n, position.m, true_deltax, dy, true_deltas);
-
-            // Matrix invH = position.constructInvH();
-            // Matrix AT = prob.A.transpose();
-            // Vector tmp = -position.x + position.mu() * position.s.cwiseInverse();
-            // #ifdef SUPER
-            // Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
-            // #else
-            // Eigen::SparseLU<Eigen::SparseMatrix<double>> slu;
-            // #endif
-            // debug_print("starting multiplication\n");
-            // auto matrix = prob.A * invH * AT;
-            // debug_print("starting slu operations\n");
-            // slu.compute(matrix);
-            // assert(slu.info() == Eigen::Success);
-            
-            // debug_print("starting solve\n");
-            // Vector dy = slu.solve(-prob.A * tmp);
-            // debug_print("solved\n");
-            // Vector ds = -AT * dy;
-            // Vector dx = -invH * ds + tmp;
-
-            // debug_print("Finished centralDirection\n");
-            // return Delta(position.n, position.m, dx, dy, ds);
         }
     }
 
@@ -144,7 +121,7 @@ namespace LPSolver {
       private:
         Position position_, delta_;
       public:
-        Block(const Position &position, const Delta &delta): position_(position), delta_(delta) {}
+        Block(const Position &position, const Delta &delta): position_(position.remaining()), delta_(delta.remaining()) {}
         double f(double x) {
             return -(position_.x + delta_.x * x).array().log().sum() - (position_.s + delta_.s * x).array().log().sum();
         }
@@ -162,7 +139,7 @@ namespace LPSolver {
         double upper_bound = 1e-3;
         double mu = position.mu();
         auto ok = [&](double x) {
-            return (position + delta * x).isCorrect() && (position + delta * x).mu() <= 1.1 * mu;
+            return (position.remaining() + delta.remaining() * x).isCorrect() && (position.remaining() + delta.remaining() * x).mu() <= 1.1 * mu;
         };
         assert(ok(0));
 

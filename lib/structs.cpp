@@ -155,5 +155,9 @@ namespace LPSolver {
         Position copy = *this;
         copy -= other;
         return copy;
-    } 
+    }
+
+    Position Position::remaining() const {
+        std::vector<int> remaining_indices = get_remaining_indices();
+    }
 }; // namespace LPSolver

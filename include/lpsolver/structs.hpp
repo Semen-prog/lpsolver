@@ -77,6 +77,8 @@ namespace LPSolver {
         int get_n_remaining() const;
 
         int cnt_free_indices() const;
+
+        Position remaining() const;
     };
 
     using Delta = Position;
