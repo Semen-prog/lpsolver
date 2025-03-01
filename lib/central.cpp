@@ -60,16 +60,16 @@ namespace LPSolver {
             Vector delta_x2 = -invH * delta_s - x2 + position.mu() * s.cwiseInverse();
 
             Vector true_deltax(position.x.rows());
-            for (int i = 0; i < free_indices.size(); ++i) {
+            for (size_t i = 0; i < free_indices.size(); ++i) {
                 true_deltax(free_indices[i]) = delta_x1(i);
             }
-            for (int i = 0; i < remaining_indices.size(); ++i) {
+            for (size_t i = 0; i < remaining_indices.size(); ++i) {
                 true_deltax(remaining_indices[i]) = delta_x2(i);
             }
 
             Vector true_deltas(position.s.rows());
 
-            for (int i = 0; i < remaining_indices.size(); ++i) {
+            for (size_t i = 0; i < remaining_indices.size(); ++i) {
                 true_deltas(remaining_indices[i]) = delta_s(i);
             }
 
