@@ -27,6 +27,10 @@ namespace LPSolver {
         Vector b, c;
 
         Problem(size_t, size_t, const Matrix&, const Vector&, const Vector&);
+
+        double primal_value(const Vector &) const;
+
+        double dual_value(const Vector &) const;
     };
 
     struct Position {

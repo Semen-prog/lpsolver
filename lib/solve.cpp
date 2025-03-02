@@ -11,6 +11,19 @@ namespace LPSolver {
             nw_s(zero_indices[i]) = prob.c(zero_indices[i]) - add(i);
         }
         position.s = nw_s;
+
+        double primal = prob.primal_value(position.x);
+        double dual = prob.dual_value(position.y);
+        if (dual > primal) {
+            debug_print("{0}\n", (prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff());
+            debug_print("{0} {1}\n", dual, primal);
+            debug_print("{0}\n", (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
+        }
+        debug_print("{0} {1}\n", (prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff(), (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
+
+        assert((prob.A.transpose() * position.y + position.s - prob.b).cwiseAbs().maxCoeff() < 1e-6);
+        assert((prob.A * position.x - prob.b).cwiseAbs().maxCoeff() < 1e-6);
+        assert(dual < primal);
     }
 
     Position solve(const Problem &prob, const Position &init, double eps, double gamma_center, double gamma_predict) {
