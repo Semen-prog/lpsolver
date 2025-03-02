@@ -74,6 +74,8 @@ namespace LPSolver {
 
         std::vector<int> get_free_indices() const;
 
+        std::vector<int> get_zero_indices() const;
+
         int get_n_remaining() const;
 
         int cnt_free_indices() const;

@@ -70,6 +70,16 @@ namespace LPSolver {
         return res;
     }
 
+    std::vector<int> Position::get_zero_indices() const {
+        std::vector<int> res;
+        for (size_t i = 0; i < n; ++i) {
+            if (index_zero.contains(i)) {
+                res.emplace_back(i);
+            }
+        }
+        return res;
+    }
+
     int Position::cnt_free_indices() const {
         return index_free.size();
     }

@@ -1,6 +1,18 @@
+#include "lpsolver/matrices.hpp"
 #include <lpsolver/solver.hpp>
 
 namespace LPSolver {
+    void step(const Problem &prob, Position &position, const Delta &delta, double len) {
+        position += delta * len;
+        Vector nw_s = position.s;
+        std::vector<int> zero_indices = position.get_zero_indices();
+        Vector add = select_columns(prob.A.transpose(), zero_indices) * position.y;
+        for (size_t i = 0; i < zero_indices.size(); ++i) {
+            nw_s(zero_indices[i]) = prob.c(zero_indices[i]) - add(i);
+        }
+        position.s = nw_s;
+    }
+
     Position solve(const Problem &prob, const Position &init, double eps, double gamma_center, double gamma_predict) {
         int cnt_iter = 0;
         debug_print("Called solve\n");
@@ -10,12 +22,14 @@ namespace LPSolver {
             while (position.gamma() < gamma_center) {
                 Delta delta = centralDirection(prob, position);
                 double length = centralLength(position, delta);
-                position += delta * length;
+                // position += delta * length;
+                step(prob, position, delta, length);
                 debug_print("center step: mu = {0}, gamma = {1}\n", position.mu(), position.gamma());
             }
             Delta delta = predictDirection(prob, position);
             double length = predictLength(position, delta, gamma_predict);
-            position += delta * length;
+            // position += delta * length;
+            step(prob, position, delta, length);
             debug_print("predict step: mu = {0}, gamma = {1}\n", position.mu(), position.gamma());
             debug_print("INFO 1: {0}\n", position.x.dot(prob.c) - position.y.dot(prob.b));
             debug_print("INFO 2: {0}\n", position.x.cwiseProduct(position.s).cwiseAbs().maxCoeff());
