@@ -48,6 +48,98 @@ namespace LPSolver {
         return y + lambd * z;
     }
 
+    Vector find_kernel_vector(const Matrix &A) {
+        std::vector<Eigen::Triplet<double>> triplets = to_triplets(A);
+        std::vector<std::unordered_map<int, double>> rows(A.cols());
+        std::vector<std::unordered_map<int, double>> cols(A.rows());
+
+        for (const auto &triplet : triplets) {
+            rows[triplet.col()][triplet.row()] = triplet.value();
+            cols[triplet.row()][triplet.col()] = triplet.value();
+        }
+
+        int n = A.rows();
+        int m = A.cols();
+        Vector x(n);
+        x.setZero();
+        std::unordered_set<int> zeros;
+        int row = 0;
+
+        for (int i = 0; i < std::min(n, m); ++i) {
+            int j = row;
+            double found = (cols[i].find(j) != cols[i].end() ? cols[i][j] : 0);
+            for (auto [cur_row, value] : cols[i]) {
+                if (cur_row >= row) {
+                    if (value > found) {
+                        found = value;
+                        j = cur_row;
+                    }
+                }
+            }
+            j += row;
+            if (rows[j].find(i) == rows[j].end() || std::abs(rows[j][i]) < 1e-3) {
+                x(i) = 1;
+                zeros.insert(i);
+            } else {
+                double div = rows[j][i];
+                for (auto &[col, val] : rows[j]) {
+                    val /= div;
+                    cols[col][j] /= div;
+                }
+
+                for (auto [col, val] : rows[j]) {
+                    cols[col].erase(j);
+                }
+                for (auto [col, val] : rows[row]) {
+                    cols[col].erase(row);
+                }
+
+                std::swap(rows[j], rows[row]);
+
+                for (auto [col, val] : rows[j]) {
+                    cols[col].emplace(j, val);
+                }
+                for (auto [col, val] : rows[row]) {
+                    cols[col].emplace(row, val);
+                }
+
+                for (int k = row + 1; k < m; ++k) {
+                    if (rows[k].contains(i) && std::abs(rows[k][i]) > 1e-3) {
+                        add_row_to_row(rows, cols, k, row, -rows[k][i]);
+                    }
+                }
+                row += 1;
+            }
+        }
+        row -= 2;
+        for (int i = 2; i < n + 1; ++i) {
+            int col = n - i;
+            if (!zeros.contains(col)) {
+                Vector tail(n - (col + 1));
+                tail.setZero();
+                Vector x_tail(n - (col + 1));
+                for (auto [cur_col, val] : rows[row]) {
+                    if (cur_col >= col + 1) {
+                        tail(cur_col - (col + 1)) = val;
+                    }
+                }
+                for (int j = col + 1; j < n; ++j) {
+                    x_tail(j - (col + 1)) = x(j);
+                }
+                x(col) = -tail.dot(x_tail);
+                row -= 1;
+            } else {
+                continue;
+            }
+        }
+        if ((A.transpose() * x).cwiseAbs().maxCoeff() >= 1e-6) {
+            std::cerr << x << '\n';
+            std::cerr << (A.transpose() * x).cwiseAbs() << '\n';
+            assert(false);
+        }
+        return x;
+    }
+
     std::tuple<int, std::optional<Vector>, std::optional<Vector>, std::optional<Vector>, std::optional<double>> solve_ellipsoidal_system(
         const Problem &prob,
         const Position &position,
@@ -166,7 +258,156 @@ namespace LPSolver {
         }
     }
 
-    decltype(auto) ellipsoidal_bound(const Problem &prob, Position &position, int j, Vector &w, EllipsoidalBounds bound) {
+    std::tuple<int, std::optional<Vector>, std::optional<Vector>, std::optional<Vector>, std::optional<double>> solve_ellipsoidal_system_with_free(
+        const Problem &prob,
+        const Position &position,
+        const Matrix &A1,
+        const Matrix &A2,
+        const std::tuple<Vector, Vector, Matrix> &invQ,
+        const std::tuple<Vector, Vector, Matrix> &Q,
+        const Vector &c,
+        const Vector &c1,
+        const Vector &c2,
+        const Vector &b,
+        const std::vector<int> &free,
+        const std::vector<int> &remaining,
+        EllipsoidalBounds bound,
+        int j
+    )
+    {
+        int m = b.rows();
+        int n_free = A1.cols();
+        Vector A2iq0 = A2 * std::get<0>(invQ);
+        Vector u(A2iq0.rows() + n_free);
+        u.setZero();
+        for (int i = 0; i < A2iq0.rows(); ++i) {
+            u(i) = A2iq0(i);
+        }
+
+        Vector A2iq1 = A2 * std::get<1>(invQ);
+        Vector v(n_free + A2iq1.rows());
+        for (int i = 0; i < A2iq1.rows(); ++i) {
+            v(n_free + i) = A2iq1(i);
+        }
+
+        Matrix M = construct_block({{A1, A2 * std::get<2>(invQ) * A2.transpose()}, {Matrix(A1.transpose().rows(), A1.cols()), A1.transpose()}});
+
+        Solver slu;
+        slu.compute(M);
+        if (slu.info() != Eigen::Success) {
+            return std::make_tuple(2, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        }
+        
+        Vector right_b_lambda(b.rows() + c1.rows());
+        right_b_lambda.setZero();
+        for (int i = 0; i < b.rows(); ++i) {
+            right_b_lambda(i) = b(i);
+        }
+        Vector sol_lambda = solve_sparse_with_one_rank(slu, u, v, right_b_lambda);
+        
+        Vector right_b_free_top = -A2 * (std::get<0>(invQ) * std::get<1>(invQ).dot(c2) - std::get<2>(invQ) * c2);
+        Vector right_b_free(right_b_free_top.rows() + c1.rows());
+        for (int i = 0; i < right_b_free_top.rows(); ++i) {
+            right_b_free(i) = right_b_free_top(i);
+        }
+        for (int i = 0; i < c1.rows(); ++i) {
+            right_b_free(i + right_b_free_top.rows()) = c1(i);
+        }
+        Vector sol_free = solve_sparse_with_one_rank(slu, u, v, right_b_free);
+
+        Vector y_lambda(sol_lambda.rows() - n_free);
+        for (int i = n_free; i < sol_lambda.rows(); ++i) {
+            y_lambda(i - n_free) = sol_lambda(i);
+        }
+        Vector y_free(sol_free.rows() - n_free);
+        for (int i = n_free; i < sol_free.rows(); ++i) {
+            y_free(i - n_free) = sol_free(i);
+        }
+
+        Vector x2_lambda = -A2.transpose() * y_lambda;
+        Vector x2_free = c2 - A2.transpose() * y_free;
+
+        double coeff_free = (
+            x2_free * (std::get<0>(invQ) * std::get<1>(invQ).dot(x2_free) - std::get<2>(invQ) * x2_free)
+        ).sum();
+        double coeff_lin = (
+            x2_free * (std::get<0>(invQ) * std::get<1>(invQ).dot(x2_lambda) - std::get<2>(invQ) * x2_lambda)
+        ).sum();
+        double coeff_sq = (
+            x2_lambda * (std::get<0>(invQ) * std::get<1>(invQ).dot(x2_lambda) - std::get<2>(invQ) * x2_lambda)
+        ).sum();
+
+        if (std::abs(coeff_sq) > 1e-12 && coeff_free / coeff_sq > 0) {
+            return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        }
+
+        double lambd = sqrt(-coeff_free / coeff_sq);
+        double lambda_inv = 1 / lambd;
+        if (lambda_inv > 1e6) {
+            return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        }
+
+        Vector y = lambd * y_lambda + y_free;
+        Vector vec = c2 - A2.transpose() * y;
+        Vector x2 = lambda_inv * (std::get<0>(invQ) * std::get<1>(invQ).dot(vec) - std::get<2>(invQ) * vec);
+        Vector sol_lambda_top(n_free);
+        Vector sol_free_top(n_free);
+        for (int i = 0; i < n_free; ++i) {
+            sol_lambda_top(i) = sol_lambda(i);
+            sol_free_top(i) = sol_free(i);
+        }
+        Vector x1 = (
+            sol_lambda_top + lambda_inv * sol_free_top
+        );
+
+        Vector true_x(position.x.rows());
+        true_x.setZero();
+
+        Vector true_y(position.y.rows());
+        true_y.setZero();
+
+        Vector true_s(position.s);
+        true_s.setZero();
+
+        for (size_t i = 0; i < free.size(); ++i) {
+            true_x(free[i]) += x1(i);
+        }
+        for (size_t i = 0; i < remaining.size(); ++i) {
+            true_x(remaining[i]) += x2(i);
+        }
+
+        Vector s = lambd * (std::get<0>(Q) * std::get<1>(Q).dot(x2) - std::get<2>(Q) * x2);
+
+        true_y = y;
+
+        double cost;
+
+        if (bound == UPPER) {
+            cost = true_x.dot(prob.c);
+        } else {
+            cost = true_y.dot(prob.b);
+        }
+        
+        std::vector<int> free_s(position.index_zero.begin(), position.index_zero.end());
+        if (bound == LOWER) {
+            free_s.emplace_back(j);
+        }
+        std::sort(free_s.begin(), free_s.end());
+
+        if (!free_s.empty()) {
+            Vector sub = select_columns(prob.A, free_s).transpose() * true_y;
+            for (size_t i = 0; i < free_s.size(); ++i) {
+                true_s(free_s[i]) += c(free_s[i]) - sub(i);
+            }
+        }
+        for (size_t i = 0; i < remaining.size(); ++i) {
+            true_s(remaining[i]) += s(i);
+        }
+
+        return std::make_tuple(0, true_x, true_y, true_s, cost);
+    }
+
+    std::tuple<std::optional<std::tuple<double, Vector, Vector, Vector>>, int> ellipsoidal_bound(const Problem &prob, Position &position, int j, Vector &w, EllipsoidalBounds bound) {
         std::tuple<Vector, Vector, Matrix> Q;
         std::tuple<Vector, Vector, Matrix> invQ;
         std::vector<int> remaining;
@@ -219,32 +460,32 @@ namespace LPSolver {
             Vector true_b = prob.b;
             Vector true_c = c;
 
-            auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system_with_free(A1, A2, invQ, Q, c, c1, c2, b, free, remaining, bound, j);
+            auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system_with_free(prob, position, A1, A2, invQ, Q, c, c1, c2, b, free, remaining, bound, j);
 
             if (status != 0) {
-                // return ((None, None, None, None), 2)
+                return std::make_tuple(std::nullopt, 2);
             }
 
-            if (bound == UPPER && (true_b - A * true_x).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
-                // return ((None, None, None, None), 1)
+            if (bound == UPPER && (true_b - A * *true_x).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
+                return std::make_tuple(std::nullopt, 1);
             }
-            if (bound == LOWER && (true_c - A.transpose() * true_y - true_s).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
-                // return ((None, None, None, None), 1)
+            if (bound == LOWER && (true_c - A.transpose() * *true_y - *true_s).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
+                return std::make_tuple(std::nullopt, 1);
             }
 
             Vector x_remaining(remaining.size());
             for (size_t i = 0; i < remaining.size(); ++i) {
-                x_remaining(i) = true_x(remaining[i]);
+                x_remaining(i) = (*true_x)(remaining[i]);
             }
             Vector s_remaining(remaining.size());
             for (size_t i = 0; i < remaining.size(); ++i) {
-                s_remaining(i) = true_s(remaining[i]);
+                s_remaining(i) = (*true_s)(remaining[i]);
             }
             if ((x_remaining.minCoeff() >= -1e-5 && bound == UPPER) ||
                 (s_remaining.minCoeff() >= -1e-5 && bound == LOWER)) {
-                return std::make_tuple(std::make_tuple(cost, true_x, true_y, true_s), 0);
+                return std::make_tuple(std::make_tuple(*cost, *true_x, *true_y, *true_s), 0);
             } else {
-                // return ((None, None, None, None), 1)
+                return std::make_tuple(std::nullopt, 1);
             }
         } else {
             Matrix A = prob.A;
@@ -261,15 +502,15 @@ namespace LPSolver {
             auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system(prob, position, A2, invQ, Q, c, c2, b, free, remaining, bound, j);
 
             if (status != 0) {
-                // return ((None, None, None, None), status)
+                return std::make_tuple(std::nullopt, status);
             }
 
             if (bound == UPPER && (true_b - A * *true_x).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
-                // return ((None, None, None, None), 1)
+                return std::make_tuple(std::nullopt, 1);
             }
 
             if (bound == LOWER && (true_c - A.transpose() * *true_y - *true_s).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
-                // return ((None, None, None, None), 1)
+                return std::make_tuple(std::nullopt, 1);
             }
 
             Vector true_x_remaining(remaining.size());
@@ -281,9 +522,9 @@ namespace LPSolver {
 
             if ((true_x_remaining.minCoeff() >= -1e-5 && bound == UPPER) ||
                 (true_s_remaining.minCoeff() >= -1e-5 && bound == LOWER)) {
-                return std::make_tuple(std::make_tuple(cost, true_x, true_y, true_s), 0);
+                return std::make_tuple(std::make_tuple(*cost, *true_x, *true_y, *true_s), 0);
             } else {
-                // return ((None, None, None, None), 1)
+                return std::make_tuple(std::nullopt, 1);
             }
         }
     }
@@ -296,10 +537,34 @@ namespace LPSolver {
             for (size_t j = 0; j < remaining_indices.size(); ++j) {
                 w(remaining_indices[j]) = sqrt(position.x(remaining_indices[j]) / position.s(remaining_indices[j]));
             }
-            auto [tuple1, status] = ellipsoidal_bound(prob, position, i, w, UPPER);
-            auto [upper_bound, x_u, y_u, s_u] = tuple1;
-            
-            assert(status != 2);
+            auto [tuple1, status1] = ellipsoidal_bound(prob, position, i, w, UPPER);
+            assert(status1 != 2);
+            if (status1 == 0) {
+                auto [upper_bound, x_u, y_u, s_u] = *tuple1;
+                if (upper_bound < prob.dual_value(position.y)) {
+                    if (x_u(i) < 0) {
+                        double alpha = -x_u(i) / (position.x(i) - x_u(i));
+                        position.x = alpha * position.x + (1 - alpha) * x_u;
+                        position.index_zero.insert(i);
+                        continue;
+                    }
+                }
+            }
+
+            w.setZero();
+            for (size_t j = 0; j < remaining_indices.size(); ++j) {
+                w(remaining_indices[j])  = sqrt(position.x(remaining_indices[j]) / position.s(remaining_indices[j]));
+            }
+
+            auto [tuple2, status2] = ellipsoidal_bound(prob, position, i, w, LOWER);
+            if (status2 == 2) {
+                std::vector<int> nonzero;
+                for (size_t j = 0; j < prob.n; ++j) {
+                    if (!position.index_zero.contains(j) && j != i) {
+                        nonzero.emplace_back(j);
+                    }
+                }
+            }            
         }
     }
 

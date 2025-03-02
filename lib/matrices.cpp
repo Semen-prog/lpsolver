@@ -71,4 +71,23 @@ namespace LPSolver {
         res.setFromTriplets(triplets.begin(), triplets.end());
         return res;
     }
+
+    std::vector<Eigen::Triplet<double>> to_triplets(const Matrix &m) {
+        std::vector<Eigen::Triplet<double>> res;
+        for (int col = 0; col < m.outerSize(); ++col) {
+            for (int index = m.outerIndexPtr()[col]; index < m.outerIndexPtr()[col + 1]; ++index) {
+                int row = m.innerIndexPtr()[index];
+                double val = m.valuePtr()[index];
+                res.emplace_back(row, col, val);
+            }
+        }
+        return res;
+    }
+
+    void add_row_to_row(std::vector<std::unordered_map<int, double>> &rows, std::vector<std::unordered_map<int, double>> &cols, int row1, int row2, double coeff) {
+        for (auto &[col, val] : rows[row2]) {
+            rows[row1][col] += val * coeff;
+            cols[col][row1] += val * coeff;
+        }
+    }
 } // namespace LPSolver
