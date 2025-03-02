@@ -3,11 +3,11 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <unordered_set>
 
 #ifdef INFO
 #include <iostream>
 #include <format>
-#include <unordered_set>
 #define debug_print(...) std::print(std::cerr, __VA_ARGS__)
 void _printVector(const Eigen::VectorXd&);
 #define debug_print_vector(a) debug_print("Vector {0}: ", #a); _printVector(a)
