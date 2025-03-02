@@ -13,7 +13,6 @@ namespace LPSolver {
     Problem::Problem(size_t n_, size_t m_, const Matrix &A_, const Vector &b_, const Vector &c_)
         : n(n_)
         , m(m_)
-        , cur_m(m_)
         , A(A_)
         , b(b_)
         , c(c_)
