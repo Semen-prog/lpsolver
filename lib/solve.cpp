@@ -1,6 +1,7 @@
 #include "lpsolver/matrices.hpp"
 #include "lpsolver/structs.hpp"
 #include <lpsolver/solver.hpp>
+#include <optional>
 
 namespace LPSolver {
     #ifdef SUPER
@@ -47,7 +48,9 @@ namespace LPSolver {
         return y + lambd * z;
     }
 
-    decltype(auto) solve_ellipsoidal_system(
+    std::tuple<int, std::optional<Vector>, std::optional<Vector>, std::optional<Vector>, std::optional<double>> solve_ellipsoidal_system(
+        const Problem &prob,
+        const Position &position,
         const Matrix &A2,
         const std::tuple<Vector, Vector, Matrix> &invQ,
         const std::tuple<Vector, Vector, Matrix> &Q,
@@ -60,6 +63,8 @@ namespace LPSolver {
         int j
     )
     {
+        double lambd;
+        double lambda_inv;
         bool solvable = true;
         Matrix N = -A2 * std::get<2>(invQ) * A2.transpose();
         Vector u = -(A2 * std::get<0>(invQ));
@@ -82,7 +87,82 @@ namespace LPSolver {
 
             vec = A2.transpose() * solve_sparse_with_one_rank(slu, u, v, b);
 
+            Vector coeff_1_vec = std::get<0>(invQ) * (std::get<1>(invQ) * vec) - (std::get<2>(invQ) * vec);
+
+            double coeff_1 = coeff_1_vec.dot(std::get<0>(Q) * (std::get<1>(Q).dot(coeff_1_vec)) - std::get<2>(Q) * coeff_1_vec);
             
+            if (coeff_0 / coeff_1 > 0) {
+                return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+            }
+
+            lambd = sqrt(-coeff_0 / coeff_1);
+            lambda_inv = 1 / lambd;
+        } else {
+            return std::make_tuple(2, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        }
+
+        if (solvable && lambda_inv < 1e6) {
+            Vector true_x(position.x.rows());
+            Vector true_y(position.y.rows());
+            Vector true_s(position.s.rows());
+
+            true_x.setZero();
+            true_y.setZero();
+            true_s.setZero();
+
+            true_y += solve_sparse_with_one_rank(slu, u, v, A2 * (std::get<0>(invQ) * (std::get<1>(invQ).dot(c2)) - std::get<2>(invQ) * c2)) - lambd * b; 
+
+            Vector vec = (
+                lambda_inv * c2
+                -A2.transpose()
+                * (
+                    solve_sparse_with_one_rank(slu, u, v, 
+                        A2
+                        * (
+                            lambda_inv * std::get<0>(invQ) * std::get<1>(invQ).dot(c2)
+                            - lambda_inv * std::get<2>(invQ) * c2
+                        )
+                    )
+                )
+            ) + A2.transpose() * (solve_sparse_with_one_rank(slu, u, v, b));
+
+            Vector x2 = std::get<0>(invQ) * std::get<1>(invQ).dot(vec) - std::get<2>(invQ) * vec;
+
+            Vector s = (
+                c2 - A2.transpose() * (solve_sparse_with_one_rank(slu, u, v, A2 * (std::get<0>(invQ) * std::get<1>(invQ).dot(c2) - std::get<2>(invQ) * c2)))
+            ) + A2.transpose() * (solve_sparse_with_one_rank(slu, u, v, lambd * b));
+
+            for (size_t i = 0; i < remaining.size(); ++i) {
+                true_x(remaining[i]) += x2(i);
+            }
+
+            std::vector<int> free_s(position.index_zero.begin(), position.index_zero.end());
+            if (bound == LOWER) {
+                free_s.emplace_back(j);
+            }
+            std::sort(free_s.begin(), free_s.end());
+
+            if (!free_s.empty()) {
+                Vector sub = select_columns(prob.A, free_s).transpose() * true_y;
+                for (size_t i = 0; i < free_s.size(); ++i) {
+                    true_s(free_s[i]) += (
+                        prob.c(free_s[i]) - sub(i)
+                    );
+                }
+            }
+            for (size_t i = 0; i < remaining.size(); ++i) {
+                true_s(remaining[i]) += s(i);
+            }
+
+            double cost;
+            if (bound == UPPER) {
+                cost = true_x.dot(prob.c);
+            } else {
+                cost = true_y.dot(prob.b);
+            }
+            return std::make_tuple(0, true_x, true_y, true_s, cost);
+        } else {
+            return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
         }
     }
 
@@ -178,25 +258,25 @@ namespace LPSolver {
             Vector true_b = b;
             Vector true_c = c;
 
-            auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system(A2, invQ, Q, c, c2, b, free, remaining, bound, j);
+            auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system(prob, position, A2, invQ, Q, c, c2, b, free, remaining, bound, j);
 
             if (status != 0) {
                 // return ((None, None, None, None), status)
             }
 
-            if (bound == UPPER && (true_b - A * true_x).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
+            if (bound == UPPER && (true_b - A * *true_x).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
                 // return ((None, None, None, None), 1)
             }
 
-            if (bound == LOWER && (true_c - A.transpose() * true_y - true_s).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
+            if (bound == LOWER && (true_c - A.transpose() * *true_y - *true_s).cwiseAbs().maxCoeff() > ellipsoidal_acc) {
                 // return ((None, None, None, None), 1)
             }
 
             Vector true_x_remaining(remaining.size());
             Vector true_s_remaining(remaining.size());
             for (size_t i = 0; i < remaining.size(); ++i) {
-                true_x_remaining(i) = true_x(remaining[i]);
-                true_s_remaining(i) = true_s(remaining[i]);
+                true_x_remaining(i) = (*true_x)(remaining[i]);
+                true_s_remaining(i) = (*true_s)(remaining[i]);
             }
 
             if ((true_x_remaining.minCoeff() >= -1e-5 && bound == UPPER) ||
