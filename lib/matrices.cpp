@@ -61,4 +61,14 @@ namespace LPSolver {
         res.setFromTriplets(triplets.begin(), triplets.end());
         return res;
     }
+
+    Matrix construct_diag(const Vector &vec) {
+        Matrix res(vec.rows(), vec.rows());
+        std::vector<Eigen::Triplet<double>> triplets;
+        for (int i = 0; i < vec.rows(); ++i) {
+            triplets.emplace_back(i, i, vec(i));
+        }
+        res.setFromTriplets(triplets.begin(), triplets.end());
+        return res;
+    }
 } // namespace LPSolver

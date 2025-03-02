@@ -21,6 +21,8 @@ namespace LPSolver {
     using Matrix = Eigen::SparseMatrix<double>;
     using Vector = Eigen::VectorXd;
 
+    constexpr double ellipsoidal_acc = 1e-3;
+
     struct Problem {
         size_t n, m;
         Matrix A;
@@ -88,6 +90,8 @@ namespace LPSolver {
     };
 
     using Delta = Position;
+
+    enum EllipsoidalBounds { UPPER, LOWER };
 
 } // namespace LPSover
 

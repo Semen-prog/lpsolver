@@ -13,6 +13,10 @@ namespace LPSolver {
 
     double predictLength(const Position &position, const Delta &delta, double gamma_predict);
 
+    void step(const Problem &, Position &, const Delta &, double);
+
+    void filter_variables(const Problem &, Position &);
+
     Position solve(const Problem &prob, const Position &init, double eps, double gamma_center=0.9, double gamma_predict=0.7);
 
 } // namespace LPSolver
