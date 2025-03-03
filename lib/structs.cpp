@@ -19,11 +19,11 @@ namespace LPSolver {
         {}
 
     double Problem::primal_value(const Vector &x) const {
-        return (x * c).sum();
+        return (x.dot(c));
     }
 
     double Problem::dual_value(const Vector &y) const {
-        return (y * b).sum();
+        return (y.dot(b));
     }
 
     Position::Position(size_t n_, size_t m_, const Vector &x_, const Vector &y_, const Vector &s_)

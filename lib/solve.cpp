@@ -11,24 +11,28 @@ namespace LPSolver {
     #endif
     void step(const Problem &prob, Position &position, const Delta &delta, double len) {
         position += delta * len;
-        Vector nw_s = position.s;
         std::vector<int> zero_indices = position.get_zero_indices();
-        Vector add = select_columns(prob.A.transpose(), zero_indices) * position.y;
-        for (size_t i = 0; i < zero_indices.size(); ++i) {
-            nw_s(zero_indices[i]) = prob.c(zero_indices[i]) - add(i);
+        if (!zero_indices.empty()) {
+            Vector nw_s = position.s;
+            Vector add = select_columns(prob.A.transpose(), zero_indices) * position.y;
+            for (size_t i = 0; i < zero_indices.size(); ++i) {
+                nw_s(zero_indices[i]) = prob.c(zero_indices[i]) - add(i);
+            }
+            position.s = nw_s;
         }
-        position.s = nw_s;
 
         double primal = prob.primal_value(position.x);
         double dual = prob.dual_value(position.y);
+        debug_print("primal: {0}, dual: {1}\n", primal, dual);
         if (dual > primal) {
             debug_print("{0}\n", (prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff());
             debug_print("{0} {1}\n", dual, primal);
             debug_print("{0}\n", (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
         }
         debug_print("{0} {1}\n", (prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff(), (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
+        debug_print("Ax - b max coeff: {0}\n", (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
 
-        assert((prob.A.transpose() * position.y + position.s - prob.b).cwiseAbs().maxCoeff() < 1e-6);
+        assert((prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff() < 1e-6);
         assert((prob.A * position.x - prob.b).cwiseAbs().maxCoeff() < 1e-6);
         assert(dual < primal);
     }
