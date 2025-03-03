@@ -564,7 +564,28 @@ namespace LPSolver {
                         nonzero.emplace_back(j);
                     }
                 }
-            }            
+                Vector v = find_kernel_vector(select_columns(prob.A, nonzero));
+                if (v.cwiseAbs().maxCoeff() > 0) {
+                    position.index_free.insert(i);
+                    position.y -= (position.s(i) * (v * select_columns(prob.A, {i})).cwiseInverse()) * v;
+                    position.s(i) = 0;
+                } else {
+                    assert(false);
+                }
+                continue;
+            }
+
+            if (status2 == 0) {
+                auto [lower_bound, x_l, y_l, s_l] = *tuple2;
+                if (lower_bound > prob.primal_value(position.x)) {
+                    if (s_l(i) < 0) {
+                        double alpha = -s_l(i) / (position.s(i) - s_l(i));
+                        position.s = alpha * position.s + (1 - alpha) * s_l;
+                        position.y = alpha * position.y + (1 - alpha) * y_l;
+                        position.index_free.insert(i);
+                    }
+                }
+            }
         }
     }
 
