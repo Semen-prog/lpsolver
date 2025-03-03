@@ -3,6 +3,10 @@
 #include <lpsolver/solver.hpp>
 #include <optional>
 
+#ifdef SUPER
+#include <Eigen/SuperLUSupport>
+#endif
+
 namespace LPSolver {
     #ifdef SUPER
     using Solver = Eigen::SuperLU<Eigen::SparseMatrix<double>>;
