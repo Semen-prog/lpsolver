@@ -3,7 +3,7 @@ project(lpsolver)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_CXX_STANDARD 26)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -mavx -mavx2 -msse2 -msse3 -mssse3 -msse4 -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
 add_compile_options(-Wall -Wextra -Wshadow)
 
@@ -58,8 +58,8 @@ target_link_libraries(gen
     struct
 )
 
-add_executable(lpsolver bin/lpsolver.cpp)
-add_executable(generate_problem bin/generate_problem.cpp)
+add_executable(lpsolver src/lpsolver.cpp)
+add_executable(generate_problem src/generate_problem.cpp)
 
 target_link_libraries(lpsolver
     solve
