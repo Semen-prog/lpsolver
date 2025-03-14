@@ -63,8 +63,8 @@ target_link_libraries(gen
     struct
 )
 
-add_executable(lpsolver bin/lpsolver.cpp)
-add_executable(generate_problem bin/generate_problem.cpp)
+add_executable(lpsolver src/lpsolver.cpp)
+add_executable(generate_problem src/generate_problem.cpp)
 
 target_link_libraries(lpsolver
     solve
