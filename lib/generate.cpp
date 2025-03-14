@@ -64,9 +64,16 @@ namespace LPSolver {
         Matrix A(m, n);
         debug_print("Filling A...\n");
         std::vector<Eigen::Triplet<double>> triplets;
+        std::uniform_real_distribution<double> rng2(1e4, 2e4);
         for (int i = 0; i < m; ++i) {
             for (auto [index, val] : matrix_sets[i]) {
-                triplets.emplace_back(i, index, val);
+                int sign = static_cast<int>(val > 0) * 2 - 1;
+                // if (std::abs(val) > 1e6) val = rng2(rnd) * (rnd() % 2 * 2 - 1);
+		// if (std::abs(val) > 100) val = sign * (100 + (std::abs(val) - 100) * 0.01);
+		if (std::abs(val) > 1) {
+		    val = sign * std::log(std::abs(val));
+		}
+		if (std::abs(val) > 1e-6) triplets.emplace_back(i, index, val);
             }
         }
         A.setFromTriplets(triplets.begin(), triplets.end());
@@ -80,7 +87,7 @@ namespace LPSolver {
             while (cur_value < kDoublePrecisionEps) {
                 cur_value = std::abs(rng(rnd));
             }
-            x(i) = cur_value;
+            x(i) = cur_value + 1;
         }
         debug_print("Filled x\n");
 
@@ -105,7 +112,7 @@ namespace LPSolver {
             while (cur_value < kDoublePrecisionEps) {
                 cur_value = std::abs(rng(rnd));
             }
-            s(i) = cur_value;
+            s(i) = cur_value + 1;
         }
         debug_print("Filled s\n");
 

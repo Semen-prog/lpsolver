@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
     n = atoi(argv[1]);
     m = atoi(argv[2]);
     max_non_zero = atoll(argv[3]);
-    random_seed = atoi(argv[6]);
+    random_seed = atoi(argv[4]);
 
     std::pair<LPSolver::Problem, LPSolver::Position> problem = LPSolver::generateProblem(m, n, max_non_zero, random_seed);
 
