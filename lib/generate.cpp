@@ -69,11 +69,11 @@ namespace LPSolver {
             for (auto [index, val] : matrix_sets[i]) {
                 int sign = static_cast<int>(val > 0) * 2 - 1;
                 // if (std::abs(val) > 1e6) val = rng2(rnd) * (rnd() % 2 * 2 - 1);
-		// if (std::abs(val) > 100) val = sign * (100 + (std::abs(val) - 100) * 0.01);
-		if (std::abs(val) > 1) {
-		    val = sign * std::log(std::abs(val));
-		}
-		if (std::abs(val) > 1e-6) triplets.emplace_back(i, index, val);
+                // if (std::abs(val) > 100) val = sign * (100 + (std::abs(val) - 100) * 0.01);
+                if (std::abs(val) > 1) {
+                    val = sign * std::log(std::abs(val));
+                }
+                if (std::abs(val) > 1e-6) triplets.emplace_back(i, index, val);
             }
         }
         A.setFromTriplets(triplets.begin(), triplets.end());

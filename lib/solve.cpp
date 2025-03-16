@@ -187,7 +187,7 @@ namespace LPSolver {
 
             vec = A2.transpose() * solve_sparse_with_one_rank(slu, u, v, b);
 
-            Vector coeff_1_vec = std::get<0>(invQ) * (std::get<1>(invQ) * vec) - (std::get<2>(invQ) * vec);
+            Vector coeff_1_vec = std::get<0>(invQ) * (std::get<1>(invQ).dot(vec)) - (std::get<2>(invQ) * vec);
 
             double coeff_1 = coeff_1_vec.dot(std::get<0>(Q) * (std::get<1>(Q).dot(coeff_1_vec)) - std::get<2>(Q) * coeff_1_vec);
             
@@ -336,13 +336,13 @@ namespace LPSolver {
         Vector x2_free = c2 - A2.transpose() * y_free;
 
         double coeff_free = (
-            x2_free * (std::get<0>(invQ) * std::get<1>(invQ).dot(x2_free) - std::get<2>(invQ) * x2_free)
+            x2_free.cwiseProduct(std::get<0>(invQ) * std::get<1>(invQ).dot(x2_free) - std::get<2>(invQ) * x2_free)
         ).sum();
         double coeff_lin = (
-            x2_free * (std::get<0>(invQ) * std::get<1>(invQ).dot(x2_lambda) - std::get<2>(invQ) * x2_lambda)
+            x2_free.cwiseProduct(std::get<0>(invQ) * std::get<1>(invQ).dot(x2_lambda) - std::get<2>(invQ) * x2_lambda)
         ).sum();
         double coeff_sq = (
-            x2_lambda * (std::get<0>(invQ) * std::get<1>(invQ).dot(x2_lambda) - std::get<2>(invQ) * x2_lambda)
+            x2_lambda.cwiseProduct(std::get<0>(invQ) * std::get<1>(invQ).dot(x2_lambda) - std::get<2>(invQ) * x2_lambda)
         ).sum();
 
         if (std::abs(coeff_sq) > 1e-12 && coeff_free / coeff_sq > 0) {
@@ -595,6 +595,7 @@ namespace LPSolver {
                 }
             }
         }
+        debug_print("Filtered\n");
     }
 
     Position solve(const Problem &prob, const Position &init, double eps, double gamma_center, double gamma_predict) {
@@ -608,7 +609,7 @@ namespace LPSolver {
                 double length = centralLength(position, delta);
                 // position += delta * length;
                 step(prob, position, delta, length);
-                if (prob.primal_value(position.x) - prob.dual_value(position.y) < 0.1 && position.n - position.index_zero.size() - position.index_free.size() > 2) {
+                if (prob.primal_value(position.x) - prob.dual_value(position.y) < 100 && position.n - position.index_zero.size() - position.index_free.size() > 2) {
                     filter_variables(prob, position);
                 }
                 debug_print("center step: mu = {0}, gamma = {1}\n", position.mu(), position.gamma());
