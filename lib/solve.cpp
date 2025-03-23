@@ -58,6 +58,8 @@ namespace LPSolver {
 
     Vector find_kernel_vector(const Matrix &A) {
         std::vector<Eigen::Triplet<double>> triplets = to_triplets(A);
+
+        // TODO: replace std::unordered_map with std::map
         std::vector<std::unordered_map<int, double>> rows(A.cols());
         std::vector<std::unordered_map<int, double>> cols(A.rows());
 
@@ -75,11 +77,11 @@ namespace LPSolver {
 
         for (int i = 0; i < std::min(n, m); ++i) {
             int j = row;
-            double found = (cols[i].find(j) != cols[i].end() ? cols[i][j] : 0);
+            double found = (cols[i].find(j) != cols[i].end() ? std::abs(cols[i][j]) : 0);
             for (auto [cur_row, value] : cols[i]) {
                 if (cur_row >= row) {
-                    if (value > found) {
-                        found = value;
+                    if (std::abs(value) > found) {
+                        found = std::abs(value);
                         j = cur_row;
                     }
                 }

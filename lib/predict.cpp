@@ -109,6 +109,7 @@ namespace LPSolver {
         auto ok = [&](double x) {
             return (position + delta.remaining() * x).isCorrect() && (position + delta.remaining() * x).gamma() >= gamma_predict;
         };
+        assert(ok(0));
 
         while (!ok(step)) {
             step /= 2;

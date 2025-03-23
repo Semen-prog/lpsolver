@@ -84,10 +84,10 @@ namespace LPSolver {
         return res;
     }
 
-    void add_row_to_row(std::vector<std::unordered_map<int, double>> &rows, std::vector<std::unordered_map<int, double>> &cols, int row1, int row2, double coeff) {
-        for (auto &[col, val] : rows[row2]) {
-            rows[row1][col] += val * coeff;
-            cols[col][row1] += val * coeff;
+    void add_row_to_row(std::vector<std::unordered_map<int, double>> &rows, std::vector<std::unordered_map<int, double>> &cols, int row_to, int row_from, double coeff) {
+        for (auto &[col, val] : rows[row_from]) {
+            rows[row_to][col] += val * coeff;
+            cols[col][row_to] += val * coeff;
         }
     }
 } // namespace LPSolver
