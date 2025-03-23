@@ -19,6 +19,10 @@ namespace LPSolver {
         return res;
     }
 
+    Matrix select_rows(const Matrix &matr, const std::vector<int> &rows) {
+        return select_columns(matr.transpose(), rows).transpose();
+    }
+
     Matrix construct_block(const std::vector<std::vector<Matrix>> &blocks) {
         std::vector<Eigen::Triplet<double>> triplets;
         int cnt_rows = 0;

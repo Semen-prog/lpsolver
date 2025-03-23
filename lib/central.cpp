@@ -113,7 +113,7 @@ namespace LPSolver {
                 true_deltas(remaining_indices[i]) = ds(i);
             }
 
-            return Delta(position.n, position.m, true_deltax, dy, true_deltas);
+            return Delta(position.n, position.m, true_deltax, dy, true_deltas, position.index_zero, position.index_free);
         }
     }
 

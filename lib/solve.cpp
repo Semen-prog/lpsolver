@@ -18,7 +18,7 @@ namespace LPSolver {
         std::vector<int> zero_indices = position.get_zero_indices();
         if (!zero_indices.empty()) {
             Vector nw_s = position.s;
-            Vector add = select_columns(prob.A.transpose(), zero_indices) * position.y;
+            Vector add = select_rows(prob.A.transpose(), zero_indices) * position.y;
             for (size_t i = 0; i < zero_indices.size(); ++i) {
                 nw_s(zero_indices[i]) = prob.c(zero_indices[i]) - add(i);
             }
@@ -418,6 +418,7 @@ namespace LPSolver {
     }
 
     std::tuple<std::optional<std::tuple<double, Vector, Vector, Vector>>, int> ellipsoidal_bound(const Problem &prob, Position &position, int j, Vector &w, EllipsoidalBounds bound) {
+        // debug_print("[ ELLIPSOIDAL_BOUND ] {0}\n", static_cast<int>(bound));
         std::tuple<Vector, Vector, Matrix> Q;
         std::tuple<Vector, Vector, Matrix> invQ;
         std::vector<int> remaining;
@@ -430,6 +431,7 @@ namespace LPSolver {
             free = position.get_free_indices();
             free.emplace_back(j);
             std::sort(free.begin(), free.end());
+            // debug_print("[ W_INFO ]: {}\n", w.sum());
             Vector w2(remaining.size());
             for (size_t i = 0; i < remaining.size(); ++i) {
                 w2(i) = w(remaining[i]);
@@ -448,6 +450,8 @@ namespace LPSolver {
             for (size_t i = 0; i < remaining.size(); ++i) {
                 w2(i) = w(remaining[i]);
             }
+
+            // debug_print("[ W2 ] {0}, {1}\n", w.sum(), n2);
 
             Q = std::make_tuple(w2.cwiseInverse(), w2.cwiseInverse(), construct_diag(w2.cwiseInverse().cwiseProduct(w2.cwiseInverse())));
             invQ = std::make_tuple(w2 * (1 / (n2 - 1)), w2, construct_diag(w2.cwiseProduct(w2)));
@@ -470,7 +474,17 @@ namespace LPSolver {
             Vector true_b = prob.b;
             Vector true_c = c;
 
+            // debug_print("[ !LOG ]: {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}\n", A1.sum(), A2.sum(), std::get<0>(invQ).sum(), std::get<1>(invQ).sum(), std::get<2>(invQ).sum(), std::get<0>(Q).sum(), std::get<1>(Q).sum(), std::get<2>(Q).sum(), c.sum(), c1.sum(), c2.sum(), b.sum(), static_cast<int>(bound));
+            // debug_print("[ LOG ]: calling solve_ellipsoidal_system_with_free\n");
+
             auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system_with_free(prob, position, A1, A2, invQ, Q, c, c1, c2, b, free, remaining, bound, j);
+
+            // debug_print("[ LOG ] status: {}", status);
+            if (status == 0) {
+                // debug_print(", true_x sum: {}, true_y sum: {}, true_s sum: {}, cost: {}\n", true_x->sum(), true_y->sum(), true_s->sum(), *cost);
+            } else {
+                // debug_print("\n");
+            }
 
             if (status != 0) {
                 return std::make_tuple(std::nullopt, 2);
@@ -508,6 +522,8 @@ namespace LPSolver {
 
             Vector true_b = b;
             Vector true_c = c;
+
+            // debug_print("[ LOG ]: {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}\n", A2.sum(), std::get<0>(invQ).sum(), std::get<1>(invQ).sum(), std::get<2>(invQ).sum(), std::get<0>(Q).sum(), std::get<1>(Q).sum(), std::get<2>(Q).sum(), c.sum(), c2.sum(), b.sum(), static_cast<int>(bound));
 
             auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system(prob, position, A2, invQ, Q, c, c2, b, free, remaining, bound, j);
 
@@ -548,14 +564,20 @@ namespace LPSolver {
                 w(remaining_indices[j]) = sqrt(position.x(remaining_indices[j]) / position.s(remaining_indices[j]));
             }
             auto [tuple1, status1] = ellipsoidal_bound(prob, position, i, w, UPPER);
+            // debug_print("[ LOG ] ellipsoidal_bound returned status {}\n", status1);
             assert(status1 != 2);
             if (status1 == 0) {
                 auto [upper_bound, x_u, y_u, s_u] = *tuple1;
+                // debug_print("[ LOG ] upper_bound {}, x_u {}, y_u {}, s_u {}\n", upper_bound, x_u.sum(), y_u.sum(), s_u.sum());
+                // debug_print("[ LOG ] some info: {0}\n", upper_bound);
                 if (upper_bound < prob.dual_value(position.y)) {
                     if (x_u(i) < 0) {
                         double alpha = -x_u(i) / (position.x(i) - x_u(i));
                         position.x = alpha * position.x + (1 - alpha) * x_u;
                         position.index_zero.insert(i);
+                        // debug_print("[ LOG ] index zero additional info: {0} {1} ", i, alpha);
+                        // debug_print_vector(position.x);
+                        // debug_print("\n");
                         continue;
                     }
                 }
@@ -615,6 +637,16 @@ namespace LPSolver {
                     filter_variables(prob, position);
                 }
                 debug_print("center step: mu = {0}, gamma = {1}\n", position.mu(), position.gamma());
+                debug_print("Free x:");
+                for (int el : position.get_free_indices()) {
+                    debug_print(" {0}", el);
+                }
+                debug_print("\n");
+                debug_print("Zero x:");
+                for (int el : position.get_zero_indices()) {
+                    debug_print(" {0}", el);
+                }
+                debug_print("\n");
             }
             Delta delta = predictDirection(prob, position);
             double length = predictLength(position, delta, gamma_predict);

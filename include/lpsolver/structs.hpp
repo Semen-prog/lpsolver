@@ -46,6 +46,8 @@ namespace LPSolver {
 
         Position(size_t, size_t, const Vector&, const Vector&, const Vector&);
 
+        Position(size_t, size_t, const Vector&, const Vector&, const Vector&, const std::unordered_set<int>&, const std::unordered_set<int>&);
+
         double mu() const;
 
         double gamma() const;

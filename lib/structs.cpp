@@ -32,7 +32,17 @@ namespace LPSolver {
         , x(x_)
         , y(y_)
         , s(s_)
-        {}
+    {}
+    
+    Position::Position(size_t n_, size_t m_, const Vector &x_, const Vector &y_, const Vector &s_, const std::unordered_set<int> &index_zero_, const std::unordered_set<int> &index_free_)
+        : n(n_)
+        , m(m_)
+        , x(x_)
+        , y(y_)
+        , s(s_)
+        , index_zero(index_zero_)
+        , index_free(index_free_)
+    {}
 
     Vector Position::get_remaining(const Vector& v) const {
         int remaining = n - index_zero.size() - index_free.size();

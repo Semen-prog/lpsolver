@@ -99,7 +99,7 @@ namespace LPSolver {
                 true_deltas(remaining_indices[i]) = delta_s(i);
             }
 
-            return Delta(position.n, position.m, true_deltax, delta_y, true_deltas);
+            return Delta(position.n, position.m, true_deltax, delta_y, true_deltas, position.index_zero, position.index_free);
         }
     }
 
@@ -107,7 +107,7 @@ namespace LPSolver {
         double step = 1e-3;
 
         auto ok = [&](double x) {
-            return (position + delta.remaining() * x).isCorrect() && (position + delta.remaining() * x).gamma() >= gamma_predict;
+            return (position.remaining() + delta.remaining() * x).isCorrect() && (position.remaining() + delta.remaining() * x).gamma() >= gamma_predict;
         };
         assert(ok(0));
 
