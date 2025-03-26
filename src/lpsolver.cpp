@@ -32,6 +32,7 @@ int main() {
         double val; std::cin >> val;
         s(i) = val;
     }
+
     LPSolver::Problem prob(n, m, A, b, c);
     LPSolver::Position position(n, m, x, y, s);
     auto res = LPSolver::solve(prob, position, 1e-2);

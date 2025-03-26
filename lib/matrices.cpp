@@ -94,4 +94,9 @@ namespace LPSolver {
             cols[col][row_to] += val * coeff;
         }
     }
+
+    int calculate_rank(const Matrix &matr) {
+        #warning This function must not be used in production
+        return Eigen::ColPivHouseholderQR<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>(matr.toDense()).rank();
+    }
 } // namespace LPSolver

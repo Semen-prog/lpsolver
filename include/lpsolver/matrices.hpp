@@ -15,6 +15,8 @@ namespace LPSolver {
     std::vector<Eigen::Triplet<double>> to_triplets(const Matrix &);
 
     void add_row_to_row(std::vector<std::unordered_map<int, double>> &, std::vector<std::unordered_map<int, double>> &, int, int, double);
+
+    int calculate_rank(const Matrix &);
 } // namespace LPSolver
 
 #endif // MATRICES_HPP

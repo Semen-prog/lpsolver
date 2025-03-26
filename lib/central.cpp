@@ -36,9 +36,9 @@ namespace LPSolver {
             slu.compute(M);
             assert(slu.info() == Eigen::Success);
 
-            Vector right_v(s.rows() + position.cnt_free_indices());
-
             Vector res1 = A2 * (x2 - position.mu() * s.cwiseInverse());
+            Vector right_v(res1.rows() + position.cnt_free_indices());
+
             for (int i = 0; i < res1.rows(); ++i) {
                 right_v(i) = res1(i);
             }
@@ -47,6 +47,8 @@ namespace LPSolver {
             }
 
             Vector sol = slu.solve(right_v);
+
+            debug_print("sol.sum(): {}\n", sol.sum());
 
             Vector delta_x1(position.cnt_free_indices());
             for (int i = 0; i < position.cnt_free_indices(); ++i) {
@@ -57,9 +59,11 @@ namespace LPSolver {
                 delta_y(i - position.cnt_free_indices()) = sol(i);
             }
             Vector delta_s = -A2T * delta_y;
+            debug_print("delta_s.sum(): {}, A2T.sum(): {}\n", delta_s.sum(), A2T.sum());
             Vector delta_x2 = -invH * delta_s - x2 + position.mu() * s.cwiseInverse();
 
             Vector true_deltax(position.x.rows());
+            true_deltax.setZero();
             for (size_t i = 0; i < free_indices.size(); ++i) {
                 true_deltax(free_indices[i]) = delta_x1(i);
             }
@@ -68,12 +72,15 @@ namespace LPSolver {
             }
 
             Vector true_deltas(position.s.rows());
+            true_deltas.setZero();
 
             for (size_t i = 0; i < remaining_indices.size(); ++i) {
                 true_deltas(remaining_indices[i]) = delta_s(i);
             }
 
-            return Delta(position.n, position.m, true_deltax, delta_y, true_deltas);
+            debug_print("true_deltax.sum(): {}, deltay.sum(): {}, true_deltas.sum(): {}\n", true_deltax.sum(), delta_y.sum(), true_deltas.sum());
+
+            return Delta(position.n, position.m, true_deltax, delta_y, true_deltas, position.index_zero, position.index_free);
         } else {
             Matrix A2 = select_columns(prob.A, position.get_remaining_indices());
             Vector x2 = position.get_x_remaining();

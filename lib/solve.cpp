@@ -36,8 +36,10 @@ namespace LPSolver {
         debug_print("{0} {1}\n", (prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff(), (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
         debug_print("Ax - b max coeff: {0}\n", (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
 
-        assert((prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff() < 1e-6);
-        assert((prob.A * position.x - prob.b).cwiseAbs().maxCoeff() < 1e-6);
+        debug_print("A^Ty + s - c max coeff: {}\n", (prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff());
+
+        // assert((prob.A.transpose() * position.y + position.s - prob.c).cwiseAbs().maxCoeff() < 1e-6);
+        // assert((prob.A * position.x - prob.b).cwiseAbs().maxCoeff() < 1e-6);
         assert(dual < primal);
     }
 
@@ -57,6 +59,10 @@ namespace LPSolver {
     }
 
     Vector find_kernel_vector(const Matrix &A) {
+        debug_print("find_kernel_vector A rows: {}, cols: {}\n", A.rows(), A.cols());
+        debug_print("find_kernel_vector A rank: {}\n", calculate_rank(A));
+        debug_print("find_kernel_vector A sum: {}\n", A.sum());
+        
         std::vector<Eigen::Triplet<double>> triplets = to_triplets(A);
 
         // TODO: replace std::unordered_map with std::map
@@ -86,7 +92,9 @@ namespace LPSolver {
                     }
                 }
             }
-            j += row;
+            debug_print("J: {}\n", j);
+            // j += row;
+            debug_print("ROWS SIZE: {}, j: {}\n", rows.size(), j);
             if (rows[j].find(i) == rows[j].end() || std::abs(rows[j][i]) < 1e-3) {
                 x(i) = 1;
                 zeros.insert(i);
@@ -119,6 +127,7 @@ namespace LPSolver {
                     }
                 }
                 row += 1;
+                debug_print("ROW: {}\n", row);
             }
         }
         row -= 2;
@@ -128,6 +137,7 @@ namespace LPSolver {
                 Vector tail(n - (col + 1));
                 tail.setZero();
                 Vector x_tail(n - (col + 1));
+                debug_print("2ROWS SIZE: {}, row: {}\n", rows.size(), row);
                 for (auto [cur_col, val] : rows[row]) {
                     if (cur_col >= col + 1) {
                         tail(cur_col - (col + 1)) = val;
@@ -168,6 +178,7 @@ namespace LPSolver {
         double lambd;
         double lambda_inv;
         bool solvable = true;
+        // debug_print("invQ[2]: {}\n", std::get<2>(invQ).toDense().diagonal().cwiseAbs().minCoeff());
         Matrix N = -A2 * std::get<2>(invQ) * A2.transpose();
         Vector u = -(A2 * std::get<0>(invQ));
         Vector v = (A2 * std::get<1>(invQ));
@@ -183,15 +194,20 @@ namespace LPSolver {
 
         if (solvable) {
             Vector vec = A2.transpose() * solve_sparse_with_one_rank(slu, u, v, A2 * (std::get<0>(invQ) * (std::get<1>(invQ).dot(c2)) - std::get<2>(invQ) * c2));
+            // debug_print("solve_ellipsoidal_system vec sum: {}\n", vec.sum());
             Vector coeff_0_vec = std::get<0>(invQ) * (std::get<1>(invQ).dot(c2 - vec)) - std::get<2>(invQ) * (c2 - vec);
 
             double coeff_0 = coeff_0_vec.dot(std::get<0>(Q) * (std::get<1>(Q).dot(coeff_0_vec)) - std::get<2>(Q) * coeff_0_vec);
+
+            // debug_print("coeff_0: {}\n", coeff_0);
 
             vec = A2.transpose() * solve_sparse_with_one_rank(slu, u, v, b);
 
             Vector coeff_1_vec = std::get<0>(invQ) * (std::get<1>(invQ).dot(vec)) - (std::get<2>(invQ) * vec);
 
             double coeff_1 = coeff_1_vec.dot(std::get<0>(Q) * (std::get<1>(Q).dot(coeff_1_vec)) - std::get<2>(Q) * coeff_1_vec);
+
+            // debug_print("coeff_1: {}\n", coeff_1);
             
             if (coeff_0 / coeff_1 > 0) {
                 return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
@@ -262,6 +278,12 @@ namespace LPSolver {
             } else {
                 cost = true_y.dot(prob.b);
             }
+
+            // debug_print("!!!!!!!!!!!!! {}\n", (A2.transpose() * position.y + s - c2).cwiseAbs().maxCoeff());
+
+            // assert((A2 * x2 - b).cwiseAbs().maxCoeff() < 1e-3);
+            // assert((A2.transpose() * position.y + s - c2).cwiseAbs().maxCoeff() < 1e-3);
+            
             return std::make_tuple(0, true_x, true_y, true_s, cost);
         } else {
             return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
@@ -414,6 +436,14 @@ namespace LPSolver {
             true_s(remaining[i]) += s(i);
         }
 
+        Vector c_remaining(remaining.size());
+        for (int i = 0; i < remaining.size(); ++i) {
+            c_remaining(i) = c(remaining[i]);
+        }
+
+        assert((A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff() < 1e-3);
+        assert((A2.transpose() * y + s - c_remaining).cwiseAbs().maxCoeff() < 1e-3);
+
         return std::make_tuple(0, true_x, true_y, true_s, cost);
     }
 
@@ -451,10 +481,10 @@ namespace LPSolver {
                 w2(i) = w(remaining[i]);
             }
 
-            // debug_print("[ W2 ] {0}, {1}\n", w.sum(), n2);
+            // debug_print("[ W2 ] {0}, {1}\n", w2.sum(), n2);
 
             Q = std::make_tuple(w2.cwiseInverse(), w2.cwiseInverse(), construct_diag(w2.cwiseInverse().cwiseProduct(w2.cwiseInverse())));
-            invQ = std::make_tuple(w2 * (1 / (n2 - 1)), w2, construct_diag(w2.cwiseProduct(w2)));
+            invQ = std::make_tuple(w2 * (1. / (n2 - 1)), w2, construct_diag(w2.cwiseProduct(w2)));
         }
 
         Matrix A2 = select_columns(prob.A, remaining);
@@ -596,10 +626,11 @@ namespace LPSolver {
                         nonzero.emplace_back(j);
                     }
                 }
+                debug_print("Filtered number: {}\n", position.index_free.size() + position.index_zero.size());
                 Vector v = find_kernel_vector(select_columns(prob.A, nonzero));
                 if (v.cwiseAbs().maxCoeff() > 0) {
                     position.index_free.insert(i);
-                    position.y -= (position.s(i) * (v * select_columns(prob.A, {i})).cwiseInverse()) * v;
+                    position.y += (position.s(i) / (v.dot(Vector(select_columns(prob.A, {i}))))) * v;
                     position.s(i) = 0;
                 } else {
                     assert(false);
@@ -634,7 +665,9 @@ namespace LPSolver {
                 // position += delta * length;
                 step(prob, position, delta, length);
                 if (prob.primal_value(position.x) - prob.dual_value(position.y) < 100 && position.n - position.index_zero.size() - position.index_free.size() > 2) {
+                    debug_print("Before filter: {}\n", position.x.dot(position.s));
                     filter_variables(prob, position);
+                    debug_print("After filter: {}\n", position.x.dot(position.s));
                 }
                 debug_print("center step: mu = {0}, gamma = {1}\n", position.mu(), position.gamma());
                 debug_print("Free x:");

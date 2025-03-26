@@ -67,7 +67,7 @@ namespace LPSolver {
                 true_deltas(remaining_indices[i]) = delta_s(i);
             }
 
-            return Delta(position.n, position.m, true_deltax, delta_y, true_deltas);
+            return Delta(position.n, position.m, true_deltax, delta_y, true_deltas, position.index_zero, position.index_free);
         } else {
             Matrix A2 = select_columns(prob.A, position.get_remaining_indices());
             Vector x2 = position.get_x_remaining();
@@ -99,7 +99,8 @@ namespace LPSolver {
                 true_deltas(remaining_indices[i]) = delta_s(i);
             }
 
-            return Delta(position.n, position.m, true_deltax, delta_y, true_deltas, position.index_zero, position.index_free);
+            Delta res = Delta(position.n, position.m, true_deltax, delta_y, true_deltas, position.index_zero, position.index_free);
+            return res;
         }
     }
 
