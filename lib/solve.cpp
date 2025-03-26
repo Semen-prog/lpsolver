@@ -153,8 +153,10 @@ namespace LPSolver {
             }
         }
         if ((A.transpose() * x).cwiseAbs().maxCoeff() >= 1e-6) {
-            std::cerr << x << '\n';
-            std::cerr << (A.transpose() * x).cwiseAbs() << '\n';
+            // std::cerr << x << '\n';
+            // std::cerr << (A.transpose() * x).cwiseAbs() << '\n';
+            debug_print_vector(x);
+            debug_print_vector((A.transpose() * x).cwiseAbs());
             assert(false);
         }
         return x;
@@ -307,6 +309,16 @@ namespace LPSolver {
         int j
     )
     {
+        debug_print("free:");
+        for (int el : free) {
+            debug_print(" {}", el);
+        }
+        debug_print("\nremaining:");
+        for (int el : remaining) {
+            debug_print(" {}", el);
+        }
+        debug_print("\n");
+        debug_print("position x sum: {}\n", position.x.sum());
         int m = b.rows();
         int n_free = A1.cols();
         Vector A2iq0 = A2 * std::get<0>(invQ);
@@ -373,6 +385,8 @@ namespace LPSolver {
             return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
         }
 
+        debug_print("coeff_free: {}, coeff_sq: {}\n", coeff_free, coeff_sq);
+
         double lambd = sqrt(-coeff_free / coeff_sq);
         double lambda_inv = 1 / lambd;
         if (lambda_inv > 1e6) {
@@ -381,6 +395,8 @@ namespace LPSolver {
 
         Vector y = lambd * y_lambda + y_free;
         Vector vec = c2 - A2.transpose() * y;
+        debug_print("vec sum: {}\n", vec.sum());
+        debug_print("lambd: {}, invq[0] sum: {}, invq[1] sum: {}, invq[2] sum: {}\n", lambd, std::get<0>(invQ).sum(), std::get<1>(invQ).sum(), std::get<2>(invQ).sum());
         Vector x2 = lambda_inv * (std::get<0>(invQ) * std::get<1>(invQ).dot(vec) - std::get<2>(invQ) * vec);
         Vector sol_lambda_top(n_free);
         Vector sol_free_top(n_free);
@@ -441,6 +457,10 @@ namespace LPSolver {
             c_remaining(i) = c(remaining[i]);
         }
 
+        debug_print("true_x sum: {}, true_y sum: {}, true_s sum {}\n", true_x.sum(), true_y.sum(), true_s.sum());
+        debug_print("x1 sum: {}, x2 sum: {}\n", x1.sum(), x2.sum());
+
+        debug_print("(A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff(): {}\n", (A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff());
         assert((A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff() < 1e-3);
         assert((A2.transpose() * y + s - c_remaining).cwiseAbs().maxCoeff() < 1e-3);
 
@@ -504,7 +524,16 @@ namespace LPSolver {
             Vector true_b = prob.b;
             Vector true_c = c;
 
-            // debug_print("[ !LOG ]: {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}\n", A1.sum(), A2.sum(), std::get<0>(invQ).sum(), std::get<1>(invQ).sum(), std::get<2>(invQ).sum(), std::get<0>(Q).sum(), std::get<1>(Q).sum(), std::get<2>(Q).sum(), c.sum(), c1.sum(), c2.sum(), b.sum(), static_cast<int>(bound));
+            // debug_print("[ !LOG ]: {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}\n", j, A1.sum(), A2.sum(), std::get<0>(invQ).sum(), std::get<1>(invQ).sum(), std::get<2>(invQ).sum(), std::get<0>(Q).sum(), std::get<1>(Q).sum(), std::get<2>(Q).sum(), c.sum(), c1.sum(), c2.sum(), b.sum(), static_cast<int>(bound));
+            // debug_print("index_free:");
+            // for (auto el : position.index_free) {
+            //     debug_print(" {}", el);
+            // }
+            // debug_print("\nindex_zero:");
+            // for (auto el : position.index_zero) {
+            //     debug_print(" {}", el);
+            // }
+            // debug_print("\n");
             // debug_print("[ LOG ]: calling solve_ellipsoidal_system_with_free\n");
 
             auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system_with_free(prob, position, A1, A2, invQ, Q, c, c1, c2, b, free, remaining, bound, j);
@@ -586,8 +615,9 @@ namespace LPSolver {
     }
 
     void filter_variables(const Problem &prob, Position &position) {
-        std::vector<int> remaining_indices = position.get_remaining_indices();
-        for (int i : remaining_indices) {
+        std::vector<int> remaining_indices_init = position.get_remaining_indices();
+        for (int i : remaining_indices_init) {
+            std::vector<int> remaining_indices = position.get_remaining_indices();
             Vector w(position.x.rows());
             w.setZero();
             for (size_t j = 0; j < remaining_indices.size(); ++j) {
