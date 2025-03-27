@@ -330,6 +330,7 @@ namespace LPSolver {
 
         Vector A2iq1 = A2 * std::get<1>(invQ);
         Vector v(n_free + A2iq1.rows());
+        v.setZero();
         for (int i = 0; i < A2iq1.rows(); ++i) {
             v(n_free + i) = A2iq1(i);
         }
