@@ -37,6 +37,10 @@ int main() {
     LPSolver::Position position(n, m, x, y, s);
     auto res = LPSolver::solve(prob, position, 1e-2);
 
+    std::cout << "n == " << n << ", free size: " << res.index_free.size() << ", zero size: " << res.index_zero.size() << '\n';
+    std::cout << "free%: " << res.index_free.size() * 100.0 / n << '\n';
+    std::cout << "zero%: " << res.index_zero.size() * 100.0 / n << '\n';
+
     return 0;
 
     std::cout << "x = (";

@@ -67,6 +67,7 @@ namespace LPSolver {
         std::uniform_real_distribution<double> rng2(1e4, 2e4);
         for (int i = 0; i < m; ++i) {
             for (auto [index, val] : matrix_sets[i]) {
+                /*
                 int sign = static_cast<int>(val > 0) * 2 - 1;
                 // if (std::abs(val) > 1e6) val = rng2(rnd) * (rnd() % 2 * 2 - 1);
                 // if (std::abs(val) > 100) val = sign * (100 + (std::abs(val) - 100) * 0.01);
@@ -74,6 +75,8 @@ namespace LPSolver {
                     val = sign * std::log(std::abs(val));
                 }
                 if (std::abs(val) > 1e-6) triplets.emplace_back(i, index, val);
+                */
+                triplets.emplace_back(i, index, std::asinh(val));
             }
         }
         A.setFromTriplets(triplets.begin(), triplets.end());
