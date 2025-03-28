@@ -231,7 +231,8 @@ namespace LPSolver {
             true_y.setZero();
             true_s.setZero();
 
-            true_y += solve_sparse_with_one_rank(slu, u, v, A2 * (std::get<0>(invQ) * (std::get<1>(invQ).dot(c2)) - std::get<2>(invQ) * c2)) - lambd * b; 
+            true_y += solve_sparse_with_one_rank(slu, u, v, A2 * (std::get<0>(invQ) * (std::get<1>(invQ).dot(c2)) - std::get<2>(invQ) * c2) - lambd * b); 
+            // debug_print_vector(true_y);
 
             Vector vec = (
                 lambda_inv * c2
@@ -271,6 +272,8 @@ namespace LPSolver {
                     );
                 }
             }
+            // debug_print_vector(true_s);
+            // debug_print_vector(s);
             for (size_t i = 0; i < remaining.size(); ++i) {
                 true_s(remaining[i]) += s(i);
             }
@@ -282,10 +285,14 @@ namespace LPSolver {
                 cost = true_y.dot(prob.b);
             }
 
+            // debug_print("{} {}\n{} {}\n", true_x.sum(), prob.c.sum(), true_y.sum(), prob.b.sum());
+
             // debug_print("!!!!!!!!!!!!! {}\n", (A2.transpose() * position.y + s - c2).cwiseAbs().maxCoeff());
 
             // assert((A2 * x2 - b).cwiseAbs().maxCoeff() < 1e-3);
             // assert((A2.transpose() * position.y + s - c2).cwiseAbs().maxCoeff() < 1e-3);
+
+            // debug_print_vector(true_s);
             
             return std::make_tuple(0, true_x, true_y, true_s, cost);
         } else {
@@ -650,12 +657,19 @@ namespace LPSolver {
                 }
             }
 
+            remaining_indices = position.get_remaining_indices();
             w.setZero();
             for (size_t j = 0; j < remaining_indices.size(); ++j) {
                 w(remaining_indices[j])  = sqrt(position.x(remaining_indices[j]) / position.s(remaining_indices[j]));
             }
+            if (i == 153 || i == 246 || i == 183) {
+                debug_print("sum w: {}, i == {}\n", w.sum(), i);
+            }
 
             auto [tuple2, status2] = ellipsoidal_bound(prob, position, i, w, LOWER);
+            if (i == 153 || i == 246 || i == 183) {
+                debug_print("status2 == {}\n", status2);
+            }
             if (status2 == 2) {
                 std::vector<int> nonzero;
                 for (size_t j = 0; j < prob.n; ++j) {
@@ -719,8 +733,8 @@ namespace LPSolver {
                 debug_print("\n");
 
                 std::cout << "n == " << prob.n << ", free size: " << position.index_free.size() << ", zero size: " << position.index_zero.size() << '\n';
-                std::cout << "free%: " << position.index_free.size() * 100.0 / prob.n << '\n';
-                std::cout << "zero%: " << position.index_zero.size() * 100.0 / prob.n << '\n';
+                std::cout << "free%: " << position.index_free.size() * 100.0 / prob.m << '\n';
+                std::cout << "zero%: " << position.index_zero.size() * 100.0 / (prob.n - prob.m) << '\n';
             }
             Delta delta = predictDirection(prob, position);
             double length = predictLength(position, delta, gamma_predict);
@@ -731,8 +745,8 @@ namespace LPSolver {
             debug_print("INFO 2: {0}\n", position.x.cwiseProduct(position.s).cwiseAbs().maxCoeff());
             debug_print("Ax - b max coeff: {0}\n", (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
             std::cout << "n == " << prob.n << ", free size: " << position.index_free.size() << ", zero size: " << position.index_zero.size() << '\n';
-            std::cout << "free%: " << position.index_free.size() * 100.0 / prob.n << '\n';
-            std::cout << "zero%: " << position.index_zero.size() * 100.0 / prob.n << '\n';
+            std::cout << "free%: " << position.index_free.size() * 100.0 / prob.m << '\n';
+            std::cout << "zero%: " << position.index_zero.size() * 100.0 / (prob.n - prob.m) << '\n';
             if (position.index_zero.size() == 196) {
                 break;
             }

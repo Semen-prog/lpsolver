@@ -38,8 +38,8 @@ int main() {
     auto res = LPSolver::solve(prob, position, 1e-5);
 
     std::cout << "n == " << n << ", free size: " << res.index_free.size() << ", zero size: " << res.index_zero.size() << '\n';
-    std::cout << "free%: " << res.index_free.size() * 100.0 / n << '\n';
-    std::cout << "zero%: " << res.index_zero.size() * 100.0 / n << '\n';
+    std::cout << "free%: " << res.index_free.size() * 100.0 / m << '\n';
+    std::cout << "zero%: " << res.index_zero.size() * 100.0 / (n - m) << '\n';
 
     return 0;
 
