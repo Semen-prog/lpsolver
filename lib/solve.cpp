@@ -9,11 +9,6 @@
 #endif
 
 namespace LPSolver {
-    #ifdef SUPER
-    using Solver = Eigen::SuperLU<Eigen::SparseMatrix<double>>;
-    #else
-    using Solver = Eigen::SparseLU<Eigen::SparseMatrix<double>>;
-    #endif
     void step(const Problem &prob, Position &position, const Delta &delta, double len) {
         position += delta * len;
         std::vector<int> zero_indices = position.get_zero_indices();
@@ -183,11 +178,7 @@ namespace LPSolver {
         Matrix N = -A2 * std::get<2>(invQ) * A2.transpose();
         Vector u = -(A2 * std::get<0>(invQ));
         Vector v = (A2 * std::get<1>(invQ));
-        #ifdef SUPER
-        Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
-        #else
-        Eigen::SparseLU<Eigen::SparseMatrix<double>> slu;
-        #endif
+        Solver slu;
         slu.compute(N);
         if (slu.info() != Eigen::Success) {
             solvable = false;

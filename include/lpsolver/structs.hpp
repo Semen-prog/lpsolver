@@ -17,6 +17,11 @@ void _printVector(const Eigen::VectorXd&);
 #endif
 
 namespace LPSolver {
+    #ifdef SUPER
+    using Solver = Eigen::SuperLU<Eigen::SparseMatrix<double>>;
+    #else
+    using Solver = Eigen::SparseLU<Eigen::SparseMatrix<double>>;
+    #endif
     
     using Matrix = Eigen::SparseMatrix<double>;
     using Vector = Eigen::VectorXd;

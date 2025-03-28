@@ -27,11 +27,7 @@ namespace LPSolver {
 
             Matrix M = construct_block({{A1, N}, {Matrix(A1.transpose().rows(), A1.cols()), A1.transpose()}});
 
-            #ifdef SUPER
-            Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
-            #else
-            Eigen::SparseLU<Eigen::SparseMatrix<double>> slu;
-            #endif
+            Solver slu;
 
             slu.compute(M);
             assert(slu.info() == Eigen::Success);
@@ -93,11 +89,7 @@ namespace LPSolver {
 
             Vector tmp = -x2 + position.mu() * s2.cwiseInverse();
 
-            #ifdef SUPER
-            Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
-            #else
-            Eigen::SparseLU<Eigen::SparseMatrix<double>> slu;
-            #endif
+            Solver slu;
 
             debug_print("starting multiplication\n");
             Matrix matrix = A2 * invH * A2T;

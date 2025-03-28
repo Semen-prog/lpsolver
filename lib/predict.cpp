@@ -17,11 +17,7 @@ namespace LPSolver {
             Matrix N = A2 * invH * A2.transpose();
             Matrix M = construct_block({{A1, N}, {Matrix(A1.transpose().rows(), A1.cols()), A1.transpose()}});
 
-            #ifdef SUPER
-            Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
-            #else
-            Eigen::SparseLU<Eigen::SparseMatrix<double>> slu;
-            #endif
+            Solver slu;
 
             slu.compute(M);
             assert(slu.info() == Eigen::Success);
@@ -74,11 +70,7 @@ namespace LPSolver {
             Vector s = position.get_s_remaining();
             Matrix invH = position.constructInvH();
 
-            #ifdef SUPER
-            Eigen::SuperLU<Eigen::SparseMatrix<double>> slu;
-            #else
-            Eigen::SparseLU<Eigen::SparseMatrix<double>> slu;
-            #endif
+            Solver slu;
 
             Matrix slu_matr = A2 * invH * A2.transpose();
             slu.compute(slu_matr);
