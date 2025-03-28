@@ -662,14 +662,8 @@ namespace LPSolver {
             for (size_t j = 0; j < remaining_indices.size(); ++j) {
                 w(remaining_indices[j])  = sqrt(position.x(remaining_indices[j]) / position.s(remaining_indices[j]));
             }
-            if (i == 153 || i == 246 || i == 183) {
-                debug_print("sum w: {}, i == {}\n", w.sum(), i);
-            }
 
             auto [tuple2, status2] = ellipsoidal_bound(prob, position, i, w, LOWER);
-            if (i == 153 || i == 246 || i == 183) {
-                debug_print("status2 == {}\n", status2);
-            }
             if (status2 == 2) {
                 std::vector<int> nonzero;
                 for (size_t j = 0; j < prob.n; ++j) {
