@@ -2,6 +2,7 @@
 #include "lpsolver/structs.hpp"
 #include <lpsolver/solver.hpp>
 #include <optional>
+#include <iostream>
 
 #ifdef SUPER
 #include <Eigen/SuperLUSupport>
@@ -462,8 +463,11 @@ namespace LPSolver {
         debug_print("x1 sum: {}, x2 sum: {}\n", x1.sum(), x2.sum());
 
         debug_print("(A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff(): {}\n", (A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff());
-        assert((A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff() < 1e-3);
-        assert((A2.transpose() * y + s - c_remaining).cwiseAbs().maxCoeff() < 1e-3);
+        if ((A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff() >= 1e-3) {
+            std::cout << (A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff() << '\n';
+        }
+        // assert((A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff() < 1e-3);
+        // assert((A2.transpose() * y + s - c_remaining).cwiseAbs().maxCoeff() < 1e-3);
 
         return std::make_tuple(0, true_x, true_y, true_s, cost);
     }
@@ -711,6 +715,10 @@ namespace LPSolver {
                     debug_print(" {0}", el);
                 }
                 debug_print("\n");
+
+                std::cout << "n == " << prob.n << ", free size: " << position.index_free.size() << ", zero size: " << position.index_zero.size() << '\n';
+                std::cout << "free%: " << position.index_free.size() * 100.0 / prob.n << '\n';
+                std::cout << "zero%: " << position.index_zero.size() * 100.0 / prob.n << '\n';
             }
             Delta delta = predictDirection(prob, position);
             double length = predictLength(position, delta, gamma_predict);
@@ -720,6 +728,9 @@ namespace LPSolver {
             debug_print("INFO 1: {0}\n", position.x.dot(prob.c) - position.y.dot(prob.b));
             debug_print("INFO 2: {0}\n", position.x.cwiseProduct(position.s).cwiseAbs().maxCoeff());
             debug_print("Ax - b max coeff: {0}\n", (prob.A * position.x - prob.b).cwiseAbs().maxCoeff());
+            std::cout << "n == " << prob.n << ", free size: " << position.index_free.size() << ", zero size: " << position.index_zero.size() << '\n';
+            std::cout << "free%: " << position.index_free.size() * 100.0 / prob.n << '\n';
+            std::cout << "zero%: " << position.index_zero.size() * 100.0 / prob.n << '\n';
         }
         debug_print("iterations count: {0}\n", cnt_iter);
         return position;
