@@ -48,7 +48,7 @@ namespace LPSolver {
             int i = 0;
             int j = 0;
             cur_cnt_useless = 0;
-            while (i > j || columns[j].contains(i)) {
+            while (j < i || columns[j].contains(i)) {
                 i = rows_distr(rnd);
                 j = cols_distr(rnd);
                 ++cur_cnt_useless;

@@ -703,7 +703,7 @@ namespace LPSolver {
                 double length = centralLength(position, delta);
                 // position += delta * length;
                 step(prob, position, delta, length);
-                if (prob.primal_value(position.x) - prob.dual_value(position.y) < 100 && position.n - position.index_zero.size() - position.index_free.size() > 2) {
+                if (position.mu() < 1e-2 && position.n - position.index_zero.size() - position.index_free.size() > 2) {
                     debug_print("Before filter: {}\n", position.x.dot(position.s));
                     filter_variables(prob, position);
                     debug_print("After filter: {}\n", position.x.dot(position.s));
@@ -735,9 +735,6 @@ namespace LPSolver {
             std::cout << "n == " << prob.n << ", free size: " << position.index_free.size() << ", zero size: " << position.index_zero.size() << '\n';
             std::cout << "free%: " << position.index_free.size() * 100.0 / prob.m << '\n';
             std::cout << "zero%: " << position.index_zero.size() * 100.0 / (prob.n - prob.m) << '\n';
-            if (position.index_zero.size() == 196) {
-                break;
-            }
         }
         debug_print("iterations count: {0}\n", cnt_iter);
         return position;
