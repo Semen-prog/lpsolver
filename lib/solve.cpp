@@ -60,9 +60,9 @@ namespace LPSolver {
     }
 
     Vector find_kernel_vector(const Matrix &A) {
-        debug_print("find_kernel_vector A rows: {}, cols: {}\n", A.rows(), A.cols());
-        debug_print("find_kernel_vector A rank: {}\n", calculate_rank(A));
-        debug_print("find_kernel_vector A sum: {}\n", A.sum());
+        // debug_print("find_kernel_vector A rows: {}, cols: {}\n", A.rows(), A.cols());
+        // debug_print("find_kernel_vector A rank: {}\n", calculate_rank(A));
+        // debug_print("find_kernel_vector A sum: {}\n", A.sum());
         
         std::vector<Eigen::Triplet<double>> triplets = to_triplets(A);
 
@@ -93,9 +93,9 @@ namespace LPSolver {
                     }
                 }
             }
-            debug_print("J: {}\n", j);
+            // debug_print("J: {}\n", j);
             // j += row;
-            debug_print("ROWS SIZE: {}, j: {}\n", rows.size(), j);
+            // debug_print("ROWS SIZE: {}, j: {}\n", rows.size(), j);
             if (rows[j].find(i) == rows[j].end() || std::abs(rows[j][i]) < 1e-3) {
                 x(i) = 1;
                 zeros.insert(i);
@@ -128,7 +128,7 @@ namespace LPSolver {
                     }
                 }
                 row += 1;
-                debug_print("ROW: {}\n", row);
+                // debug_print("ROW: {}\n", row);
             }
         }
         row -= 2;
@@ -138,7 +138,7 @@ namespace LPSolver {
                 Vector tail(n - (col + 1));
                 tail.setZero();
                 Vector x_tail(n - (col + 1));
-                debug_print("2ROWS SIZE: {}, row: {}\n", rows.size(), row);
+                // debug_print("2ROWS SIZE: {}, row: {}\n", rows.size(), row);
                 for (auto [cur_col, val] : rows[row]) {
                     if (cur_col >= col + 1) {
                         tail(cur_col - (col + 1)) = val;
@@ -156,8 +156,8 @@ namespace LPSolver {
         if ((A.transpose() * x).cwiseAbs().maxCoeff() >= 1e-6) {
             // std::cerr << x << '\n';
             // std::cerr << (A.transpose() * x).cwiseAbs() << '\n';
-            debug_print_vector(x);
-            debug_print_vector((A.transpose() * x).cwiseAbs());
+            // debug_print_vector(x);
+            // debug_print_vector((A.transpose() * x).cwiseAbs());
             assert(false);
         }
         return x;
@@ -310,6 +310,7 @@ namespace LPSolver {
         int j
     )
     {
+        /*
         debug_print("free:");
         for (int el : free) {
             debug_print(" {}", el);
@@ -320,6 +321,7 @@ namespace LPSolver {
         }
         debug_print("\n");
         debug_print("position x sum: {}\n", position.x.sum());
+        */
         int m = b.rows();
         int n_free = A1.cols();
         Vector A2iq0 = A2 * std::get<0>(invQ);
@@ -387,7 +389,7 @@ namespace LPSolver {
             return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
         }
 
-        debug_print("coeff_free: {}, coeff_sq: {}\n", coeff_free, coeff_sq);
+        // debug_print("coeff_free: {}, coeff_sq: {}\n", coeff_free, coeff_sq);
 
         double lambd = sqrt(-coeff_free / coeff_sq);
         double lambda_inv = 1 / lambd;
@@ -397,8 +399,8 @@ namespace LPSolver {
 
         Vector y = lambd * y_lambda + y_free;
         Vector vec = c2 - A2.transpose() * y;
-        debug_print("vec sum: {}\n", vec.sum());
-        debug_print("lambd: {}, invq[0] sum: {}, invq[1] sum: {}, invq[2] sum: {}\n", lambd, std::get<0>(invQ).sum(), std::get<1>(invQ).sum(), std::get<2>(invQ).sum());
+        // debug_print("vec sum: {}\n", vec.sum());
+        // debug_print("lambd: {}, invq[0] sum: {}, invq[1] sum: {}, invq[2] sum: {}\n", lambd, std::get<0>(invQ).sum(), std::get<1>(invQ).sum(), std::get<2>(invQ).sum());
         Vector x2 = lambda_inv * (std::get<0>(invQ) * std::get<1>(invQ).dot(vec) - std::get<2>(invQ) * vec);
         Vector sol_lambda_top(n_free);
         Vector sol_free_top(n_free);
@@ -459,10 +461,10 @@ namespace LPSolver {
             c_remaining(i) = c(remaining[i]);
         }
 
-        debug_print("true_x sum: {}, true_y sum: {}, true_s sum {}\n", true_x.sum(), true_y.sum(), true_s.sum());
-        debug_print("x1 sum: {}, x2 sum: {}\n", x1.sum(), x2.sum());
+        // debug_print("true_x sum: {}, true_y sum: {}, true_s sum {}\n", true_x.sum(), true_y.sum(), true_s.sum());
+        // debug_print("x1 sum: {}, x2 sum: {}\n", x1.sum(), x2.sum());
 
-        debug_print("(A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff(): {}\n", (A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff());
+        // debug_print("(A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff(): {}\n", (A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff());
         if ((A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff() >= 1e-3) {
             std::cout << (A1 * x1 + A2 * x2 - b).cwiseAbs().maxCoeff() << '\n';
         }
@@ -690,7 +692,7 @@ namespace LPSolver {
 
     Position solve(const Problem &prob, const Position &init, double eps, double gamma_center, double gamma_predict) {
         int cnt_iter = 0;
-        debug_print("Called solve\n");
+        // debug_print("Called solve\n");
         Position position = init;
         while (position.mu() > eps) {
             ++cnt_iter;
@@ -731,6 +733,9 @@ namespace LPSolver {
             std::cout << "n == " << prob.n << ", free size: " << position.index_free.size() << ", zero size: " << position.index_zero.size() << '\n';
             std::cout << "free%: " << position.index_free.size() * 100.0 / prob.n << '\n';
             std::cout << "zero%: " << position.index_zero.size() * 100.0 / prob.n << '\n';
+            if (position.index_zero.size() == 196) {
+                break;
+            }
         }
         debug_print("iterations count: {0}\n", cnt_iter);
         return position;
