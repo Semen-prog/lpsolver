@@ -169,10 +169,8 @@ namespace LPSolver {
         const Matrix &A2,
         const std::tuple<Vector, Vector, Matrix> &invQ,
         const std::tuple<Vector, Vector, Matrix> &Q,
-        const Vector &c,
         const Vector &c2,
         const Vector &b,
-        const std::vector<int> &free,
         const std::vector<int> &remaining,
         EllipsoidalBounds bound,
         int j
@@ -329,7 +327,6 @@ namespace LPSolver {
         debug_print("\n");
         debug_print("position x sum: {}\n", position.x.sum());
         */
-        int m = b.rows();
         int n_free = A1.cols();
         Vector A2iq0 = A2 * std::get<0>(invQ);
         Vector u(A2iq0.rows() + n_free);
@@ -384,9 +381,6 @@ namespace LPSolver {
 
         double coeff_free = (
             x2_free.cwiseProduct(std::get<0>(invQ) * std::get<1>(invQ).dot(x2_free) - std::get<2>(invQ) * x2_free)
-        ).sum();
-        double coeff_lin = (
-            x2_free.cwiseProduct(std::get<0>(invQ) * std::get<1>(invQ).dot(x2_lambda) - std::get<2>(invQ) * x2_lambda)
         ).sum();
         double coeff_sq = (
             x2_lambda.cwiseProduct(std::get<0>(invQ) * std::get<1>(invQ).dot(x2_lambda) - std::get<2>(invQ) * x2_lambda)
@@ -464,7 +458,7 @@ namespace LPSolver {
         }
 
         Vector c_remaining(remaining.size());
-        for (int i = 0; i < remaining.size(); ++i) {
+        for (int i = 0; i < (int)remaining.size(); ++i) {
             c_remaining(i) = c(remaining[i]);
         }
 
@@ -598,7 +592,7 @@ namespace LPSolver {
 
             // debug_print("[ LOG ]: {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}\n", A2.sum(), std::get<0>(invQ).sum(), std::get<1>(invQ).sum(), std::get<2>(invQ).sum(), std::get<0>(Q).sum(), std::get<1>(Q).sum(), std::get<2>(Q).sum(), c.sum(), c2.sum(), b.sum(), static_cast<int>(bound));
 
-            auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system(prob, position, A2, invQ, Q, c, c2, b, free, remaining, bound, j);
+            auto [status, true_x, true_y, true_s, cost] = solve_ellipsoidal_system(prob, position, A2, invQ, Q, c2, b, remaining, bound, j);
 
             if (status != 0) {
                 return std::make_tuple(std::nullopt, status);
@@ -667,7 +661,7 @@ namespace LPSolver {
             if (status2 == 2) {
                 std::vector<int> nonzero;
                 for (size_t j = 0; j < prob.n; ++j) {
-                    if (!position.index_zero.contains(j) && j != i) {
+                    if (!position.index_zero.contains(j) && j != (size_t)i) {
                         nonzero.emplace_back(j);
                     }
                 }
