@@ -6,45 +6,26 @@
 
 #include "cudss.h"
 
-#define cuda_check(call) \
-        cuda_error = call; \
+#define cuda_check(call) { \
+		cudaError_t cuda_error = call; \
         if (cuda_error != cudaSuccess) { \
                 fprintf(stderr, "CUDA: something went wrong, error = %s\n", cudaGetErrorString(cuda_error)); \
                 exit(-1); \
-        }
+        } }
 
-#define cudss_check(call) \
-        cuda_status = call; \
+#define cudss_check(call) { \
+		cudssStatus_t cuda_status = call; \
         if (cuda_status != CUDSS_STATUS_SUCCESS) { \
                 fprintf(stderr, "CUDSS: something went wrong, status = %d\n", cuda_status); \
                 exit(-1); \
-        }
+        } }
 
-#define cudss_check_and_go(call) \
-		cuda_status = call; \
+#define cudss_check_and_go(call) { \
+		cudssStatus_t cuda_status = call; \
 		if (cuda_status != CUDSS_STATUS_SUCCESS) { \
 				*success = 0; \
 				goto free; \
-		}
-
-#define cudss_check_info \
-		cudss_check(cudssDataGet(handle, \
-                     solverData, \
-                     CUDSS_DATA_INFO, \
-                     &cudss_data_info, \
-                     sizeof(cudss_data_info), \
-                     &size_written)); \
-		fprintf(stderr, "cudss data info: %d %d\n", cudss_data_info, size_written); \
-		if (cudss_data_info > 0) { \
-                	fprintf(stderr, "CUDSS: something went wrong, status = %d\n", cudss_data_info); \
-                	exit(-1); \
-		}
-
-cudaError_t cuda_error = cudaSuccess;
-cudssStatus_t cuda_status = CUDSS_STATUS_SUCCESS;
-cudssStatus_t device_status = CUDSS_STATUS_SUCCESS;
-int cudss_data_info = 0;
-size_t size_written = 0;
+		} }
 
 #include <lpsolver/ludec.hpp>
 
@@ -128,14 +109,10 @@ double* ax_equals_b_solver(int n, int nnz, mdata A_data, int bsz, const double* 
 	cudssMatrix_t A;
     cudss_check(cudssMatrixCreateCsr(&A, n, n, nnz, offsets_d, NULL, columns_d, vals_d, CUDA_R_32I, CUDA_R_64F, CUDSS_MTYPE_GENERAL, CUDSS_MVIEW_FULL, CUDSS_BASE_ZERO));
 
-    // *success = 1;
-    // fprintf(stderr, "Execute\n");
-	cudss_check(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData, A, x, b));
-	cudss_check_info;
-	cudss_check(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig, solverData, A, x, b));
-	cudss_check_info;
-    cudss_check(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData, A, x, b));
-    cudss_check_info;
+    *success = 1;
+	cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData, A, x, b));
+	cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig, solverData, A, x, b));
+    cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData, A, x, b));
 
 free:
     cudss_check(cudssMatrixDestroy(A));
