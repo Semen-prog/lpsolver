@@ -18,7 +18,7 @@ void _printVector(const Eigen::VectorXd&);
 
 namespace LPSolver {
     
-    using Matrix = Eigen::SparseMatrix<double>;
+    using Matrix = Eigen::SparseMatrix<double, Eigen::RowMajor>;
     using Vector = Eigen::VectorXd;
 
     constexpr double ellipsoidal_acc = 1e-3;

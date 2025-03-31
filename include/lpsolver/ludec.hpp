@@ -1,13 +1,6 @@
 #ifndef LUDEC_HPP
 #define LUDEC_HPP
 
-typedef struct mdata {
-        int* offsets;
-        int* columns;
-        double* vals;
-} mdata;
-
-double* ax_equals_b_solver(int, int, mdata, int, const double*, int*);
-mdata csc_to_csr(int, int, const int*, const int*, const double*);
+int ax_equals_b_solver(int, int, const int*, const int*, const double*, int, const double*, double*);
 
 #endif // LUDEC_HPP

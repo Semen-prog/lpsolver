@@ -24,9 +24,9 @@ int main(int argc, char *argv[]) {
     std::cout.precision(20);
     std::cout << std::fixed;
 
-    for (int col = 0; col < problem.first.A.outerSize(); ++col) {
-        for (int index = problem.first.A.outerIndexPtr()[col]; index < problem.first.A.outerIndexPtr()[col + 1]; ++index) {
-            int row = problem.first.A.innerIndexPtr()[index];
+    for (int row = 0; row < problem.first.A.outerSize(); ++row) {
+        for (int index = problem.first.A.outerIndexPtr()[row]; index < problem.first.A.outerIndexPtr()[row + 1]; ++index) {
+            int col = problem.first.A.innerIndexPtr()[index];
             double val = problem.first.A.valuePtr()[index];
             std::cout << row << ' ' << col << ' ' << val << '\n';
         }
