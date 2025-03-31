@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NVIDIA Corporation.  All rights reserved.
+ * Copyright 2023-2025 NVIDIA Corporation.  All rights reserved.
  *
  * NOTICE TO LICENSEE:
  *
@@ -56,7 +56,7 @@
 #include <cuda_runtime.h>  // for cudaStream_t
 
 #define CUDSS_VERSION_MAJOR 0
-#define CUDSS_VERSION_MINOR 4
+#define CUDSS_VERSION_MINOR 5
 #define CUDSS_VERSION_PATCH 0
 #define CUDSS_VERSION (CUDSS_VERSION_MAJOR * 10000 + \
                        CUDSS_VERSION_MINOR *  100 +  \
@@ -71,6 +71,7 @@
 #endif
 
 #include "cudss_distributed_interface.h"
+#include "cudss_threading_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,7 +103,10 @@ typedef enum cudssConfigParam_t {
     CUDSS_CONFIG_MAX_LU_NNZ,              // only for CUDSS_ALG_1 and CUDSS_ALG_2 reordering algorithms
     CUDSS_CONFIG_HYBRID_MODE,             // by default: disabled
     CUDSS_CONFIG_HYBRID_DEVICE_MEMORY_LIMIT,
-    CUDSS_CONFIG_USE_CUDA_REGISTER_MEMORY // by default: enabled
+    CUDSS_CONFIG_USE_CUDA_REGISTER_MEMORY,// by default: enabled
+    CUDSS_CONFIG_HOST_NTHREADS,
+    CUDSS_CONFIG_HYBRID_EXECUTE_MODE,     // default: 0 - disabled
+    CUDSS_CONFIG_PIVOT_EPSILON_ALG
 } cudssConfigParam_t;
 
 typedef enum cudssDataParam_t {
@@ -179,8 +183,9 @@ typedef enum cudssPivotType_t {
 } cudssPivotType_t;
 
 typedef enum cudssMatrixFormat_t {
-  CUDSS_MFORMAT_DENSE,
-  CUDSS_MFORMAT_CSR,
+  CUDSS_MFORMAT_DENSE       = 1,
+  CUDSS_MFORMAT_CSR         = 2,
+  CUDSS_MFORMAT_BATCH       = 4
 } cudssMatrixFormat_t;
 
 #define CUDSS_ALLOCATOR_NAME_LEN 64
@@ -214,6 +219,10 @@ cudssStatus_t CUDSSAPI cudssSetStream(cudssHandle_t handle, cudaStream_t stream)
 
 cudssStatus_t CUDSSAPI cudssSetCommLayer(cudssHandle_t handle, const char* commLibFileName);
 
+// Setting the threading layer library name (in the library handle)
+
+cudssStatus_t CUDSSAPI cudssSetThreadingLayer(cudssHandle_t handle, const char* thrLibFileName);
+
 // Create/Destroy APIs (allocating structures + set defaults)
 
 cudssStatus_t CUDSSAPI cudssConfigCreate(cudssConfig_t *solverConfig);
@@ -235,7 +244,7 @@ cudssStatus_t CUDSSAPI cudssMatrixCreateDn(cudssMatrix_t *matrix, int64_t nrows,
 
 cudssStatus_t CUDSSAPI cudssMatrixCreateCsr(cudssMatrix_t *matrix, int64_t nrows, int64_t ncols, int64_t nnz, void *rowStart, void *rowEnd, void *colIndices, void *values, cudaDataType_t indexType, cudaDataType_t valueType, cudssMatrixType_t mtype, cudssMatrixViewType_t mview, cudssIndexBase_t indexBase);
 
-cudssStatus_t CUDSSAPI cudssMatrixCreateBatchDn(cudssMatrix_t *matrix, int64_t batchCount, void *nrows, void *ncols, void *ld, void **values, cudaDataType_t valueType,  cudssLayout_t layout);
+cudssStatus_t CUDSSAPI cudssMatrixCreateBatchDn(cudssMatrix_t *matrix, int64_t batchCount, void *nrows, void *ncols, void *ld, void **values, cudaDataType_t indexType, cudaDataType_t valueType,  cudssLayout_t layout);
 
 cudssStatus_t CUDSSAPI cudssMatrixCreateBatchCsr(cudssMatrix_t *matrix, int64_t batchCount, void *nrows, void *ncols, void *nnz, void **rowStart, void **rowEnd, void **colIndices, void **values, cudaDataType_t indexType, cudaDataType_t valueType, cudssMatrixType_t mtype, cudssMatrixViewType_t mview, cudssIndexBase_t indexBase);
 
@@ -251,7 +260,7 @@ cudssStatus_t CUDSSAPI cudssMatrixSetValues(cudssMatrix_t matrix, void *values);
 
 cudssStatus_t CUDSSAPI cudssMatrixSetCsrPointers(cudssMatrix_t matrix, void *rowOffsets, void *rowEnd, void *colIndices, void *values);
 
-cudssStatus_t CUDSSAPI cudssMatrixGetBatchDn(cudssMatrix_t matrix, int64_t *batchCount, void **nrows, void **ncols, void **ld, void ***values, cudaDataType_t* type, cudssLayout_t* layout);
+cudssStatus_t CUDSSAPI cudssMatrixGetBatchDn(cudssMatrix_t matrix, int64_t *batchCount, void **nrows, void **ncols, void **ld, void ***values, cudaDataType_t *indexType, cudaDataType_t *valueType, cudssLayout_t* layout);
 
 cudssStatus_t CUDSSAPI cudssMatrixGetBatchCsr(cudssMatrix_t matrix, int64_t *batchCount, void **nrows, void **ncols, void **nnz, void ***rowStart, void ***rowEnd, void ***colIndices, void ***values, cudaDataType_t* indexType, cudaDataType_t* valueType, cudssMatrixType_t* mtype, cudssMatrixViewType_t* mview, cudssIndexBase_t* indexBase);
 
@@ -259,7 +268,7 @@ cudssStatus_t CUDSSAPI cudssMatrixSetBatchValues(cudssMatrix_t matrix, void **va
 
 cudssStatus_t CUDSSAPI cudssMatrixSetBatchCsrPointers(cudssMatrix_t matrix, void **rowOffsets, void **rowEnd, void **colIndices, void **values);
 
-cudssStatus_t CUDSSAPI cudssMatrixGetFormat(cudssMatrix_t matrix, cudssMatrixFormat_t* format );
+cudssStatus_t CUDSSAPI cudssMatrixGetFormat(cudssMatrix_t matrix, int* format);
 
 // Memory allocator API
 
