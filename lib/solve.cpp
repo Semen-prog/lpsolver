@@ -43,10 +43,10 @@ namespace LPSolver {
         const Vector &b
     )
     {
-	    debug_print("sum: {0} {1} {2} {3}\n", mat.sum(), u.sum(), v.sum(), b.sum());
+	    // debug_print("sum: {0} {1} {2} {3}\n", mat.sum(), u.sum(), v.sum(), b.sum());
         auto res = lu_solve(mat, {b, u});
         Vector y = res[0], z = res[1];
-        debug_print("results: {0} {1}\n", y.sum(), z.sum());
+        // debug_print("results: {0} {1}\n", y.sum(), z.sum());
 	    assert(std::abs(1 - v.dot(z)) > 1e-9);
         double lambd = v.dot(y) / (1 - v.dot(z));
 
@@ -701,7 +701,7 @@ namespace LPSolver {
                 double length = centralLength(position, delta);
                 // position += delta * length;
                 step(prob, position, delta, length);
-                if (position.mu() < 1e-2 && position.n - position.index_zero.size() - position.index_free.size() > 2) {
+                if (position.mu() < 1e-3 && position.n - position.index_zero.size() - position.index_free.size() > 2) {
                     debug_print("Before filter: {}\n", position.x.dot(position.s));
                     filter_variables(prob, position);
                     debug_print("After filter: {}\n", position.x.dot(position.s));

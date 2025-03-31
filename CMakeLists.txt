@@ -4,20 +4,33 @@ project(lpsolver)
 
 enable_language(CUDA)
 
+set(CMAKE_CXX_STANDARD 23)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 option(INFO "Debug info" OFF)
-if (DAY)
+if (INFO)
+    message(STATUS "Debug info ON")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DINFO")
+else()
+    message(STATUS "Debug info OFF")
 endif()
 
 find_package(Eigen3 REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -Xptxas -O3")
+
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include/LBFGSpp")
 
 add_library(structs STATIC
     lib/structs.cpp
+)
+target_link_libraries(structs
+    Eigen3::Eigen
 )
 
 add_library(generate
@@ -43,36 +56,33 @@ set(CUDSS_FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${CUDSS_DIR}/include/cudss_threading_interface.h"
 )
 
-add_custom_command(
-    OUTPUT "${CUDSS_ARCHIVE}"
-    COMMAND wget "https://developer.download.nvidia.com/compute/cudss/redist/libcudss/linux-x86_64/libcudss-linux-x86_64-0.5.0.16_cuda12-archive.tar.xz" -O "${CUDSS_ARCHIVE}"
-    COMMENT "Downloading cudss..."
+file(DOWNLOAD
+    "https://developer.download.nvidia.com/compute/cudss/redist/libcudss/linux-x86_64/libcudss-linux-x86_64-0.5.0.16_cuda12-archive.tar.xz"
+    "${CUDSS_ARCHIVE}"
+    EXPECTED_HASH SHA256=5245d2ba26a590839e2f1dd074f87e39ee5cc201c3b29245b35c7060d59c37a5
+    SHOW_PROGRESS
 )
 
-add_custom_command(
-    OUTPUT ${CUDSS_FILES}
-    COMMAND ${CMAKE_COMMAND} -E tar xJvf "${CUDSS_ARCHIVE}" "${CUDSS_DIR}/lib/libcudss.so" "${CUDSS_DIR}/include/cudss_distributed_interface.h" "${CUDSS_DIR}/include/cudss.h" "${CUDSS_DIR}/include/cudss_threading_interface.h"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-    DEPENDS "${CUDSS_ARCHIVE}"
-    COMMENT "Unpacking cudss..."
+file(ARCHIVE_EXTRACT
+    INPUT "${CUDSS_ARCHIVE}"
 )
-
-add_custom_target(cudss_in DEPENDS ${CUDSS_FILES})
 
 include_directories("${CMAKE_CURRENT_BINARY_DIR}/${CUDSS_DIR}/include")
 
 add_library(cudss SHARED IMPORTED)
-set_target_properties(lib_cudss PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/${CUDSS_DIR}/lib/libcudss.so")
-add_dependencies(cudss
-    cudss_in
-)
+set_target_properties(cudss PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/${CUDSS_DIR}/lib/libcudss.so")
+
+set_target_properties(cudss PROPERTIES CUDA_ARCHITECTURES "86")
 
 add_library(ludec STATIC
     lib/ludec.cu
 )
 target_link_libraries(ludec
-    lib_cudss
+    cudss
+    ${CUDA_LIBRARIES}
 )
+
+set_target_properties(ludec PROPERTIES CUDA_ARCHITECTURES "86")
 
 add_library(solve STATIC
     lib/matrices.cpp
@@ -92,3 +102,4 @@ add_executable(lpsolver
 target_link_libraries(lpsolver
     solve
 )
+

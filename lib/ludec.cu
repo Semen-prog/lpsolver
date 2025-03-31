@@ -35,9 +35,13 @@ int ax_equals_b_solver(int n, int nnz, const int* offsets_h, const int* columns_
 	int* columns_d = NULL;
 	double* vals_d = NULL;
 
-	cuda_check(cudaMalloc(offsets_d, offsets_h, (n + 1) * sizeof(int), cudaMemcpyHostToDevice));
-	cuda_check(cudaMalloc(columns_d, columns_h, nnz * sizeof(int), cudaMemcpyHostToDevice));
-	cuda_check(cudaMalloc(vals_d, vals_h, nnz * sizeof(double), cudaMemcpyHostToDevice));
+    cuda_check(cudaMalloc(&offsets_d, (n + 1) * sizeof(int)));
+    cuda_check(cudaMalloc(&columns_d, nnz * sizeof(int)));
+    cuda_check(cudaMalloc(&vals_d, nnz * sizeof(double)));
+
+	cuda_check(cudaMemcpy(offsets_d, offsets_h, (n + 1) * sizeof(int), cudaMemcpyHostToDevice));
+	cuda_check(cudaMemcpy(columns_d, columns_h, nnz * sizeof(int), cudaMemcpyHostToDevice));
+	cuda_check(cudaMemcpy(vals_d, vals_h, nnz * sizeof(double), cudaMemcpyHostToDevice));
 
 	double* b_d = NULL;
 	double* x_d = NULL;
