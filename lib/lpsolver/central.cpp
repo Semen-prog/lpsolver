@@ -35,7 +35,7 @@ namespace LPSolver {
                 right_v(i) = 0;
             }
 
-            Vector sol = lu_solve(M, right_v);
+            Vector sol = lu_solve(M, std::vector(1, Vector(right_v)))[0];
 
             // debug_print("sol.sum(): {}\n", sol.sum());
 
@@ -88,7 +88,7 @@ namespace LPSolver {
 
             debug_print("starting solve\n");
 
-            Vector dy = lu_solve(matrix, -A2 * tmp);
+            Vector dy = lu_solve(matrix, std::vector(1, Vector(-A2 * tmp)))[0];
             debug_print("solved\n");
             Vector ds = -A2T * dy;
             Vector dx2 = -invH * ds + tmp;

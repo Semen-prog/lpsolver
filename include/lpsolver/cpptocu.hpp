@@ -2,9 +2,10 @@
 #define CPPTOCU_HPP
 
 #include <lpsolver/structs.hpp>
+#include <vector>
 
 namespace LPSolver {
-	Vector lu_solve(const Matrix&, const Vector&);
+	std::vector<Vector> lu_solve(const Matrix&, const std::vector<Vector>&);
 }; // namespace LPSolver;
 
 #endif // CPPTOCU_HPP

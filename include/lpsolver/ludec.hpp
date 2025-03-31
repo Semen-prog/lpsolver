@@ -7,7 +7,7 @@ typedef struct mdata {
         double* vals;
 } mdata;
 
-double* ax_equals_b_solver(int, int, mdata, const double*, int*);
+double* ax_equals_b_solver(int, int, mdata, int, const double*, int*);
 mdata csc_to_csr(int, int, const int*, const int*, const double*);
 
 #endif // LUDEC_HPP

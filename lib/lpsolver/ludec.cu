@@ -23,12 +23,28 @@
 #define cudss_check_and_go(call) \
 		cuda_status = call; \
 		if (cuda_status != CUDSS_STATUS_SUCCESS) { \
-				success = 0; \
+				*success = 0; \
 				goto free; \
+		}
+
+#define cudss_check_info \
+		cudss_check(cudssDataGet(handle, \
+                     solverData, \
+                     CUDSS_DATA_INFO, \
+                     &cudss_data_info, \
+                     sizeof(cudss_data_info), \
+                     &size_written)); \
+		fprintf(stderr, "cudss data info: %d %d\n", cudss_data_info, size_written); \
+		if (cudss_data_info > 0) { \
+                	fprintf(stderr, "CUDSS: something went wrong, status = %d\n", cudss_data_info); \
+                	exit(-1); \
 		}
 
 cudaError_t cuda_error = cudaSuccess;
 cudssStatus_t cuda_status = CUDSS_STATUS_SUCCESS;
+cudssStatus_t device_status = CUDSS_STATUS_SUCCESS;
+int cudss_data_info = 0;
+size_t size_written = 0;
 
 #include <lpsolver/ludec.hpp>
 
@@ -74,9 +90,9 @@ mdata csc_to_csr(int n, int nnz, const int* rows, const int* cols, const double*
 		
 }
 
-double* ax_equals_b_solver(int n, int nnz, mdata A_data, const double* b_h, int* success) {
+double* ax_equals_b_solver(int n, int nnz, mdata A_data, int bsz, const double* b_h, int* success) {
 	
-	double* x_h = (double*)malloc(n * sizeof(double));
+	double* x_h = (double*)malloc(bsz * n * sizeof(double));
 
 	int* offsets_d = A_data.offsets;
 	int* columns_d = A_data.columns;
@@ -85,10 +101,10 @@ double* ax_equals_b_solver(int n, int nnz, mdata A_data, const double* b_h, int*
 	double* b_d = NULL;
 	double* x_d = NULL;
 
-	cuda_check(cudaMalloc(&b_d, n * sizeof(double)));
-	cuda_check(cudaMalloc(&x_d, n * sizeof(double)));
+	cuda_check(cudaMalloc(&b_d, bsz * n * sizeof(double)));
+	cuda_check(cudaMalloc(&x_d, bsz * n * sizeof(double)));
 
-	cuda_check(cudaMemcpy(b_d, b_h, n * sizeof(double), cudaMemcpyHostToDevice));
+	cuda_check(cudaMemcpy(b_d, b_h, bsz * n * sizeof(double), cudaMemcpyHostToDevice));
 
 	cudaStream_t stream = NULL;
     cuda_check(cudaStreamCreate(&stream));
@@ -106,17 +122,20 @@ double* ax_equals_b_solver(int n, int nnz, mdata A_data, const double* b_h, int*
 
     cudssMatrix_t x, b;
 
-    cudss_check(cudssMatrixCreateDn(&b, n, 1, n, b_d, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR));
-    cudss_check(cudssMatrixCreateDn(&x, n, 1, n, x_d, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR));
+    cudss_check(cudssMatrixCreateDn(&b, n, bsz, n, b_d, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR));
+    cudss_check(cudssMatrixCreateDn(&x, n, bsz, n, x_d, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR));
 
 	cudssMatrix_t A;
-    cudss_check(cudssMatrixCreateCsr(&A, n, n, nnz, offsets_d, NULL, columns_d, vals_d, CUDA_R_32I, CUDA_R_64F, CUDSS_MTYPE_GENERAL, CUDSS_MVIEW_UPPER, CUDSS_BASE_ZERO));
+    cudss_check(cudssMatrixCreateCsr(&A, n, n, nnz, offsets_d, NULL, columns_d, vals_d, CUDA_R_32I, CUDA_R_64F, CUDSS_MTYPE_GENERAL, CUDSS_MVIEW_FULL, CUDSS_BASE_ZERO));
 
-    *success = 1;
-
-	cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData, A, x, b));
-	cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig, solverData, A, x, b));
-    cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData, A, x, b));
+    // *success = 1;
+    // fprintf(stderr, "Execute\n");
+	cudss_check(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData, A, x, b));
+	cudss_check_info;
+	cudss_check(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig, solverData, A, x, b));
+	cudss_check_info;
+    cudss_check(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData, A, x, b));
+    cudss_check_info;
 
 free:
     cudss_check(cudssMatrixDestroy(A));
@@ -128,7 +147,7 @@ free:
 
 	cuda_check(cudaStreamSynchronize(stream));
 
-	cuda_check(cudaMemcpy(x_h, x_d, n * sizeof(double), cudaMemcpyDeviceToHost));
+	cuda_check(cudaMemcpy(x_h, x_d, bsz * n * sizeof(double), cudaMemcpyDeviceToHost));
 	
 	cudaFree(offsets_d);
 

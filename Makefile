@@ -1,15 +1,15 @@
 CXX = /usr/bin/g++
 NVCC = /opt/cuda/bin/nvcc
 
-CXXFLAGS = -Iinclude/cudss -I/usr/include/eigen3 -Iinclude/LBFGSpp -Iinclude -O3 -march=native -Wall -Wextra -Wshadow -DINFO -std=c++26 -msse -msse2 -msse3 -mssse3 -msse4 -mavx -mavx2
-NVCCFLAGS = -Iinclude -Iinclude/cudss -O3 -Xptxas -O3
+CXXFLAGS = -Iinclude/cudss -I/usr/include/eigen3 -Iinclude/LBFGSpp -Iinclude -O2 -Wall -Wextra -Wshadow -DINFO -std=c++23 -g
+NVCCFLAGS = -Iinclude -Iinclude/cudss
 
 LIBSTRUCT_SRC = lib/lpsolver/structs.cpp
 LIBSTRUCT_OBJ = $(LIBSTRUCT_SRC:.cpp=.o)
 LISTRUCT_FILE = lib/lpsolver/libstruct.a
 
 LIBSOLVE_CU_SRC = lib/lpsolver/ludec.cu
-LIBSOLVE_CPP_SRC = lib/lpsolver/cpptocu.cpp lib/lpsolver/central.cpp lib/lpsolver/predict.cpp lib/matruces.cpp lib/lpsolver/solve.cpp
+LIBSOLVE_CPP_SRC = lib/lpsolver/cpptocu.cpp lib/lpsolver/central.cpp lib/lpsolver/predict.cpp lib/lpsolver/matrices.cpp lib/lpsolver/solve.cpp
 LIBSOLVE_OBJ = $(LIBSOLVE_CPP_SRC:.cpp=.o) $(LIBSOLVE_CU_SRC:.cu=.o)
 LIBSOLVE_FILE = lib/lpsolver/libsolve.a
 
