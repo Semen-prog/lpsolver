@@ -24,7 +24,7 @@ namespace LPSolver {
                 right_v(i) = 0;
             }
 
-            Vector sol = lu_solve(M, std::vector(1, Vector(right_v)))[0];
+            Vector sol = lu_solve(M, std::vector(1, Vector(right_v)), ALG_DEFAULT)[0];
 
             Vector delta_x1(position.cnt_free_indices());
             Vector delta_y(sol.rows() - position.cnt_free_indices());
@@ -65,7 +65,7 @@ namespace LPSolver {
 
             Matrix slu_matr = A2 * invH * A2.transpose();
 
-            Vector delta_y = lu_solve(slu_matr, std::vector(1, Vector(A2 * x2)))[0];
+            Vector delta_y = lu_solve(slu_matr, std::vector(1, Vector(A2 * x2)), ALG_DEFAULT)[0];
             Vector delta_s = -A2.transpose() * delta_y;
             Vector delta_x2 = -invH * delta_s - x2;
 

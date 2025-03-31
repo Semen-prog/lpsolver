@@ -37,19 +37,6 @@ namespace LPSolver {
     }
 
     Vector solve_sparse_with_one_rank(
-        const Vector &y,
-        const Vector &z,
-        const Vector &v
-    )
-    {
-	    assert(std::abs(1 - v.dot(z)) > 1e-9);
-        double lambd = v.dot(y) / (1 - v.dot(z));
-
-        return y + lambd * z;
-    }
-
-    /*
-    Vector solve_sparse_with_one_rank(
         const Matrix &mat,
         const Vector &u,
         const Vector &v,
@@ -65,7 +52,6 @@ namespace LPSolver {
 
         return y + lambd * z;
     }
-    */
 
     Vector find_kernel_vector(const Matrix &A) {
         // debug_print("find_kernel_vector A rows: {}, cols: {}\n", A.rows(), A.cols());
@@ -190,117 +176,117 @@ namespace LPSolver {
         Matrix N = -A2 * std::get<2>(invQ) * A2.transpose();
         Vector u = -(A2 * std::get<0>(invQ));
         Vector v = (A2 * std::get<1>(invQ));
-
-        std::vector<Vector> to_solve = { 
-            u, 
-            A2 * (std::get<0>(invQ) * std::get<1>(invQ).dot(c2) - std::get<2>(invQ) * c2), 
-            b
-        };
-
-        std::vector<Vector> results;
-
+        
         try {
-            results = lu_solve(N, to_solve, ALG_1);
+	    //debug_print("3\n");
+            Vector vec = A2.transpose() * solve_sparse_with_one_rank(N, u, v, A2 * (std::get<0>(invQ) * (std::get<1>(invQ).dot(c2)) - std::get<2>(invQ) * c2));
+            // debug_print("solve_ellipsoidal_system vec sum: {}\n", vec.sum());
+            Vector coeff_0_vec = std::get<0>(invQ) * (std::get<1>(invQ).dot(c2 - vec)) - std::get<2>(invQ) * (c2 - vec);
+
+            double coeff_0 = coeff_0_vec.dot(std::get<0>(Q) * (std::get<1>(Q).dot(coeff_0_vec)) - std::get<2>(Q) * coeff_0_vec);
+
+            // debug_print("coeff_0: {}\n", coeff_0);
+
+            vec = A2.transpose() * solve_sparse_with_one_rank(N, u, v, b);
+
+            Vector coeff_1_vec = std::get<0>(invQ) * (std::get<1>(invQ).dot(vec)) - (std::get<2>(invQ) * vec);
+
+            double coeff_1 = coeff_1_vec.dot(std::get<0>(Q) * (std::get<1>(Q).dot(coeff_1_vec)) - std::get<2>(Q) * coeff_1_vec);
+
+            // debug_print("coeff_1: {}\n", coeff_1);
+            
+            if (coeff_0 / coeff_1 > 0) {
+                return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+            }
+
+            lambd = sqrt(-coeff_0 / coeff_1);
+            lambda_inv = 1 / lambd;
         } catch (...) {
             return std::make_tuple(2, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
         }
-        
-	    //debug_print("3\n");
-        Vector vec = A2.transpose() * solve_sparse_with_one_rank(results[1], results[0], v);
-        // debug_print("solve_ellipsoidal_system vec sum: {}\n", vec.sum());
-        Vector coeff_0_vec = std::get<0>(invQ) * (std::get<1>(invQ).dot(c2 - vec)) - std::get<2>(invQ) * (c2 - vec);
-
-        double coeff_0 = coeff_0_vec.dot(std::get<0>(Q) * (std::get<1>(Q).dot(coeff_0_vec)) - std::get<2>(Q) * coeff_0_vec);
-
-        // debug_print("coeff_0: {}\n", coeff_0);
-
-        vec = A2.transpose() * solve_sparse_with_one_rank(results[2], results[0], v);
-
-        Vector coeff_1_vec = std::get<0>(invQ) * (std::get<1>(invQ).dot(vec)) - (std::get<2>(invQ) * vec);
-
-        double coeff_1 = coeff_1_vec.dot(std::get<0>(Q) * (std::get<1>(Q).dot(coeff_1_vec)) - std::get<2>(Q) * coeff_1_vec);
-
-        // debug_print("coeff_1: {}\n", coeff_1);
-        
-        if (coeff_0 / coeff_1 > 0) {
-            return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
-        }
-
-        lambd = sqrt(-coeff_0 / coeff_1);
-        lambda_inv = 1 / lambd;
 
         if (lambda_inv >= 1e6) {
             return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
         }
 
-        Vector true_x(position.x.rows());
-        Vector true_y(position.y.rows());
-        Vector true_s(position.s.rows());
+        try {
+            Vector true_x(position.x.rows());
+            Vector true_y(position.y.rows());
+            Vector true_s(position.s.rows());
 
-        true_x.setZero();
-        true_y.setZero();
-        true_s.setZero();
+            true_x.setZero();
+            true_y.setZero();
+            true_s.setZero();
 
-        // debug_print("1\n");
-        true_y += solve_sparse_with_one_rank(results[1] - lambd * results[2], results[0], v); 
-        // debug_print_vector(true_y);
+	    // debug_print("1\n");
+            true_y += solve_sparse_with_one_rank(N, u, v, A2 * (std::get<0>(invQ) * (std::get<1>(invQ).dot(c2)) - std::get<2>(invQ) * c2) - lambd * b); 
+            // debug_print_vector(true_y);
 
-        Vector vecc = (
-            lambda_inv * c2
-            -A2.transpose()
-            * (
-                solve_sparse_with_one_rank(lambda_inv * results[1], results[0], v)
-            )
-        ) + A2.transpose() * (solve_sparse_with_one_rank(results[2], results[0], v));
+            Vector vec = (
+                lambda_inv * c2
+                -A2.transpose()
+                * (
+                    solve_sparse_with_one_rank(N, u, v, 
+                        A2
+                        * (
+                            lambda_inv * std::get<0>(invQ) * std::get<1>(invQ).dot(c2)
+                            - lambda_inv * std::get<2>(invQ) * c2
+                        )
+                    )
+                )
+            ) + A2.transpose() * (solve_sparse_with_one_rank(N, u, v, b));
 
-        Vector x2 = std::get<0>(invQ) * std::get<1>(invQ).dot(vecc) - std::get<2>(invQ) * vecc;
+            Vector x2 = std::get<0>(invQ) * std::get<1>(invQ).dot(vec) - std::get<2>(invQ) * vec;
 
 
-        Vector s = (
-            c2 - A2.transpose() * (solve_sparse_with_one_rank(results[1], results[0], v))
-        ) + A2.transpose() * (solve_sparse_with_one_rank(lambd * results[2], results[0], v));
+            Vector s = (
+                c2 - A2.transpose() * (solve_sparse_with_one_rank(N, u, v, A2 * (std::get<0>(invQ) * std::get<1>(invQ).dot(c2) - std::get<2>(invQ) * c2)))
+            ) + A2.transpose() * (solve_sparse_with_one_rank(N, u, v, lambd * b));
 
-        for (size_t i = 0; i < remaining.size(); ++i) {
-            true_x(remaining[i]) += x2(i);
-        }
-
-        std::vector<int> free_s(position.index_zero.begin(), position.index_zero.end());
-        if (bound == LOWER) {
-            free_s.emplace_back(j);
-        }
-        std::sort(free_s.begin(), free_s.end());
-
-        if (!free_s.empty()) {
-            Vector sub = select_columns(prob.A, free_s).transpose() * true_y;
-            for (size_t i = 0; i < free_s.size(); ++i) {
-                true_s(free_s[i]) += (
-                    prob.c(free_s[i]) - sub(i)
-                );
+            for (size_t i = 0; i < remaining.size(); ++i) {
+                true_x(remaining[i]) += x2(i);
             }
+
+            std::vector<int> free_s(position.index_zero.begin(), position.index_zero.end());
+            if (bound == LOWER) {
+                free_s.emplace_back(j);
+            }
+            std::sort(free_s.begin(), free_s.end());
+
+            if (!free_s.empty()) {
+                Vector sub = select_columns(prob.A, free_s).transpose() * true_y;
+                for (size_t i = 0; i < free_s.size(); ++i) {
+                    true_s(free_s[i]) += (
+                        prob.c(free_s[i]) - sub(i)
+                    );
+                }
+            }
+            // debug_print_vector(true_s);
+            // debug_print_vector(s);
+            for (size_t i = 0; i < remaining.size(); ++i) {
+                true_s(remaining[i]) += s(i);
+            }
+
+            double cost;
+            if (bound == UPPER) {
+                cost = true_x.dot(prob.c);
+            } else {
+                cost = true_y.dot(prob.b);
+            }
+
+            // debug_print("{} {}\n{} {}\n", true_x.sum(), prob.c.sum(), true_y.sum(), prob.b.sum());
+
+            // debug_print("!!!!!!!!!!!!! {}\n", (A2.transpose() * position.y + s - c2).cwiseAbs().maxCoeff());
+
+            // assert((A2 * x2 - b).cwiseAbs().maxCoeff() < 1e-3);
+            // assert((A2.transpose() * position.y + s - c2).cwiseAbs().maxCoeff() < 1e-3);
+
+            // debug_print_vector(true_s);
+            
+            return std::make_tuple(0, true_x, true_y, true_s, cost);
+        } catch (...) {
+            return std::make_tuple(1, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
         }
-        // debug_print_vector(true_s);
-        // debug_print_vector(s);
-        for (size_t i = 0; i < remaining.size(); ++i) {
-            true_s(remaining[i]) += s(i);
-        }
-
-        double cost;
-        if (bound == UPPER) {
-            cost = true_x.dot(prob.c);
-        } else {
-            cost = true_y.dot(prob.b);
-        }
-
-        // debug_print("{} {}\n{} {}\n", true_x.sum(), prob.c.sum(), true_y.sum(), prob.b.sum());
-
-        // debug_print("!!!!!!!!!!!!! {}\n", (A2.transpose() * position.y + s - c2).cwiseAbs().maxCoeff());
-
-        // assert((A2 * x2 - b).cwiseAbs().maxCoeff() < 1e-3);
-        // assert((A2.transpose() * position.y + s - c2).cwiseAbs().maxCoeff() < 1e-3);
-
-        // debug_print_vector(true_s);
-        
-        return std::make_tuple(0, true_x, true_y, true_s, cost);
     }
 
     std::tuple<int, std::optional<Vector>, std::optional<Vector>, std::optional<Vector>, std::optional<double>> solve_ellipsoidal_system_with_free(
@@ -355,6 +341,15 @@ namespace LPSolver {
             right_b_lambda(i) = b(i);
         }
 
+        Vector sol_lambda;
+
+	// debug_print("2\n");
+        try {
+            sol_lambda = solve_sparse_with_one_rank(M, u, v, right_b_lambda);
+        } catch (...) {
+            return std::make_tuple(2, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        }
+        
         Vector right_b_free_top = -A2 * (std::get<0>(invQ) * std::get<1>(invQ).dot(c2) - std::get<2>(invQ) * c2);
         Vector right_b_free(right_b_free_top.rows() + c1.rows());
         for (int i = 0; i < right_b_free_top.rows(); ++i) {
@@ -364,22 +359,13 @@ namespace LPSolver {
             right_b_free(i + right_b_free_top.rows()) = c1(i);
         }
 
-        std::vector<Vector> to_solve = {
-            u,
-            right_b_lambda,
-            right_b_free
-        };
+        Vector sol_free;
 
-        std::vector<Vector> results;
         try {
-            results = lu_solve(M, to_solve, ALG_1);
+            sol_free = solve_sparse_with_one_rank(M, u, v, right_b_free);
         } catch (...) {
             return std::make_tuple(2, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
         }
-
-        Vector sol_lambda = solve_sparse_with_one_rank(results[1], results[0], v);
-
-        Vector sol_free = solve_sparse_with_one_rank(results[2], results[0], v);
 
         Vector y_lambda(sol_lambda.rows() - n_free);
         for (int i = n_free; i < sol_lambda.rows(); ++i) {
@@ -755,4 +741,3 @@ namespace LPSolver {
         return position;
     }
 } // namespace LPSolver
-

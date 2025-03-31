@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace LPSolver {
-    std::vector<Vector> lu_solve(const Matrix& A, const std::vector<Vector> &bs) {
+    std::vector<Vector> lu_solve(const Matrix& A, const std::vector<Vector> &bs, ALG_TYPE type) {
 		int n = A.outerSize();
 		int nnz = A.nonZeros();
 		int rhs_size = bs.size();
@@ -16,7 +16,7 @@ namespace LPSolver {
 		}
 		
         double* x_all = new double[rhs_size * n];
-		int status = ax_equals_b_solver(n, nnz, A.outerIndexPtr(), A.innerIndexPtr(), A.valuePtr(), rhs_size, b_all.data(), x_all);
+		int status = ax_equals_b_solver(n, nnz, A.outerIndexPtr(), A.innerIndexPtr(), A.valuePtr(), rhs_size, b_all.data(), x_all, static_cast<int>(type));
         if (!status) {
             throw std::runtime_error("Factor is exactly singular.");
         }

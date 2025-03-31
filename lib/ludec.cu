@@ -29,7 +29,7 @@
 
 #include <lpsolver/ludec.hpp>
 
-int ax_equals_b_solver(int n, int nnz, const int* offsets_h, const int* columns_h, const double* vals_h, int rhs_size, const double* b_h, double* x_h) {
+int ax_equals_b_solver(int n, int nnz, const int* offsets_h, const int* columns_h, const double* vals_h, int rhs_size, const double* b_h, double* x_h, int type) {
 
 	int* offsets_d = NULL;
 	int* columns_d = NULL;
@@ -65,7 +65,9 @@ int ax_equals_b_solver(int n, int nnz, const int* offsets_h, const int* columns_
     cudss_check(cudssConfigCreate(&solverConfig));
     cudss_check(cudssDataCreate(handle, &solverData));
 
-    cudssAlgType_t reorder_alg = CUDSS_ALG_2;
+    cudssAlgType_t reorder_alg = CUDSS_ALG_DEFAULT;
+    if (type == 1) reorder_alg = CUDSS_ALG_1;
+    else if (type == 2) reorder_alg = CUDSS_ALG_2;
     cudss_check(cudssConfigSet(solverConfig, CUDSS_CONFIG_REORDERING_ALG,
                 &reorder_alg, sizeof(cudssAlgType_t)));
 
