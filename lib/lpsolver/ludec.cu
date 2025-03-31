@@ -101,6 +101,10 @@ double* ax_equals_b_solver(int n, int nnz, mdata A_data, int bsz, const double* 
     cudss_check(cudssConfigCreate(&solverConfig));
     cudss_check(cudssDataCreate(handle, &solverData));
 
+    cudssAlgType_t reorder_alg = CUDSS_ALG_2;
+    cudss_check(cudssConfigSet(solverConfig, CUDSS_CONFIG_REORDERING_ALG,
+                &reorder_alg, sizeof(cudssAlgType_t)));
+
     cudssMatrix_t x, b;
 
     cudss_check(cudssMatrixCreateDn(&b, n, bsz, n, b_d, CUDA_R_64F, CUDSS_LAYOUT_COL_MAJOR));
