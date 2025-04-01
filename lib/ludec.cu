@@ -83,6 +83,9 @@ int ax_equals_b_solver(int n, int nnz, const int* offsets_h, const int* columns_
 	cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_ANALYSIS, solverConfig, solverData, A, x, b));
 	cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_FACTORIZATION, solverConfig, solverData, A, x, b));
     cudss_check_and_go(cudssExecute(handle, CUDSS_PHASE_SOLVE, solverConfig, solverData, A, x, b));
+    
+    cuda_check(cudaStreamSynchronize(stream));
+    cuda_check(cudaMemcpy(x_h, x_d, rhs_size * n * sizeof(double), cudaMemcpyDeviceToHost));
 
 free:
     cudss_check(cudssMatrixDestroy(A));
@@ -92,10 +95,6 @@ free:
     cudss_check(cudssConfigDestroy(solverConfig));
     cudss_check(cudssDestroy(handle));
 
-	cuda_check(cudaStreamSynchronize(stream));
-
-	cuda_check(cudaMemcpy(x_h, x_d, rhs_size * n * sizeof(double), cudaMemcpyDeviceToHost));
-	
 	cudaFree(offsets_d);
 	cudaFree(columns_d);
 	cudaFree(vals_d);

@@ -35,7 +35,7 @@ namespace LPSolver {
                 right_v(i) = 0;
             }
 
-            Vector sol = lu_solve(M, std::vector(1, Vector(right_v)), ALG_DEFAULT)[0];
+            Vector sol = lu_solve(M, std::vector(1, right_v), ALG_1)[0];
 
             // debug_print("sol.sum(): {}\n", sol.sum());
 

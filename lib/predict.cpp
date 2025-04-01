@@ -24,7 +24,7 @@ namespace LPSolver {
                 right_v(i) = 0;
             }
 
-            Vector sol = lu_solve(M, std::vector(1, Vector(right_v)), ALG_DEFAULT)[0];
+            Vector sol = lu_solve(M, std::vector(1, right_v), ALG_1)[0];
 
             Vector delta_x1(position.cnt_free_indices());
             Vector delta_y(sol.rows() - position.cnt_free_indices());

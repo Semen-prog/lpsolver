@@ -18,6 +18,7 @@ namespace LPSolver {
         double* x_all = new double[rhs_size * n];
 		int status = ax_equals_b_solver(n, nnz, A.outerIndexPtr(), A.innerIndexPtr(), A.valuePtr(), rhs_size, b_all.data(), x_all, static_cast<int>(type));
         if (!status) {
+            delete[] x_all;
             throw std::runtime_error("Factor is exactly singular.");
         }
 
@@ -28,7 +29,7 @@ namespace LPSolver {
 			}
 		}
 
-		free(x_all);
+		delete[] x_all;
 		return xs;
 	}
 }; // namespace LPSolver
